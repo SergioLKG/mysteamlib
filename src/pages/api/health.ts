@@ -1,14 +1,28 @@
 import type { APIRoute } from 'astro';
+import { db } from '../../lib/db/client';
+import { healthCheck } from '../../lib/db/schema';
 
 export const prerender = false;
 
 export const GET: APIRoute = async () => {
-  const hasDbUrl = Boolean(process.env.DATABASE_URL);
+  let dbStatus: 'connected' | 'error' | 'not_configured' = 'not_configured';
+
+  if (db) {
+    try {
+      await db.select({ id: healthCheck.id }).from(healthCheck).limit(1);
+      dbStatus = 'connected';
+    } catch (e) {
+      dbStatus = 'error';
+      console.error('Health check DB error:', e);
+    }
+  }
+
+  const ok = dbStatus === 'connected';
 
   return new Response(
     JSON.stringify({
-      status: hasDbUrl ? 'ok' : 'degraded',
-      db: hasDbUrl ? 'configured' : 'not_configured',
+      status: ok ? 'ok' : 'degraded',
+      db: dbStatus,
       timestamp: new Date().toISOString(),
     }),
     {
