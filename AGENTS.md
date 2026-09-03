@@ -26,7 +26,8 @@ Astro SSR on Vercel (adapter) · Postgres **Neon** · **Drizzle** ORM · Steam O
 - Data provided "as is" — disclaimers in UI for estimates (e.g. HLTB times).
 
 ## Current state (02 sep 2026)
-- Neon DB connected via Vercel Storage (`DATABASE_URL` in `.env.local`). `STEAM_API_KEY` + `SESSION_SECRET` set in `.env.local`.
-- `@vercel/analytics` + `@vercel/speed-insights` installed (integrate in `BaseLayout.astro`).
-- Health endpoint at `/api/health` (reports `db: configured` when `DATABASE_URL` exists).
-- **Next**: Drizzle setup + real DB schema + `SELECT 1` health query + Vercel deploy.
+- **Fase 1 cerrada.** Deploy en producción: `https://mysteamlib.vercel.app`, `/api/health` → `{"status":"ok","db":"connected"}`.
+- Neon DB connected via Vercel Storage (`DATABASE_URL` + `POSTGRES_*` env on Vercel, mirrored in `.env.local`). `STEAM_API_KEY` + `SESSION_SECRET` set on Vercel + `.env.local`.
+- Drizzle wired: `src/lib/db/schema.ts` (table `health_check`), `src/lib/db/client.ts`, `drizzle.config.ts`, migrations in `drizzle/`. Scripts: `db:generate/migrate/push/studio`.
+- `BaseLayout.astro` (in `src/layouts/`) integrates `@vercel/analytics` + `@vercel/speed-insights`. Required for all pages.
+- **In progress (Fase 2)**: full DB schema (`users`, `games`, `achievements`, `user_games`, `user_achievements`, `hltb_matches`), Steam/Store/HLTB wrappers, OpenID auth, sync jobs.
