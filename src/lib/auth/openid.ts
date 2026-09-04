@@ -1,6 +1,5 @@
 const OPENID_ENDPOINT = 'https://steamcommunity.com/openid/login';
 const OPENID_NS = 'http://specs.openid.net/auth/2.0';
-const STEAM_IDENTIFIER_PREFIX = 'http://steamcommunity.com/openid/id/';
 
 export interface SteamOpenIdParams {
   realm: string;
@@ -65,6 +64,9 @@ export async function verifyOpenIdResponse(
   if (!/is_valid:true/.test(body)) return null;
 
   const claimedId = params.get('openid.claimed_id') ?? '';
-  if (!claimedId.startsWith(STEAM_IDENTIFIER_PREFIX)) return null;
-  return claimedId.slice(STEAM_IDENTIFIER_PREFIX.length);
+  // Steam returns the claimed id as <scheme>://steamcommunity.com/openid/id/<steamid64>.
+  // The scheme can be http or https, so extract the trailing numeric SteamID by regex.
+  const match = claimedId.match(/steamcommunity\.com\/openid\/id\/(\d+)/);
+  if (!match) return null;
+  return match[1];
 }
