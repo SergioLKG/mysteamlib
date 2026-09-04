@@ -31,8 +31,8 @@ export async function verifyOpenIdResponse(
   returnTo: string,
   params: URLSearchParams,
 ): Promise<string | null> {
-  // nonce anti-replay: bail if absent
-  if (!params.get('openid.claimed_id') || !params.get('openid.nonce')) {
+  // nonce anti-replay: bail if absent. Steam sends 'openid.response_nonce'.
+  if (!params.get('openid.claimed_id') || !params.get('openid.response_nonce')) {
     return null;
   }
 
