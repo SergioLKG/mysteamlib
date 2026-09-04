@@ -1,12 +1,6 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client';
-import {
-  games,
-  users,
-  userGames,
-  userAchievements,
-  achievements,
-} from '../db/schema';
+import { games, users, userGames } from '../db/schema';
 import { getOwnedGames, getPlayerAchievements } from '../steam/webApi';
 import { RateLimiter } from './rateLimiter';
 
@@ -132,33 +126,12 @@ export async function syncLibrary(
     const ach = res.playerstats.achievements ?? [];
     const unlockedCount = ach.filter((a) => a.achieved === 1).length;
 
-    for (const a of ach) {
-      if (!a.apiname) continue;
-      const [achRow] = await db
-        .select({ id: achievements.id })
-        .from(achievements)
-        .where(and(eq(achievements.appid, g.appid), eq(achievements.apiName, a.apiname)))
-        .limit(1);
-      if (!achRow) continue; // schema not populated yet (syncMetadata not run)
-
-      const unlocked = a.achieved === 1;
-      await db
-        .insert(userAchievements)
-        .values({
-          userId: user[0].id,
-          achievementId: achRow.id,
-          unlocked,
-          unlockedAt: unlocked && a.unlocktime ? new Date(a.unlocktime * 1000) : null,
-        })
-        .onConflictDoUpdate({
-          target: [userAchievements.userId, userAchievements.achievementId],
-          set: {
-            unlocked,
-            unlockedAt: unlocked && a.unlocktime ? sql`excluded.unlocked_at` : sql`NULL`,
-          },
-        });
-    }
-
+    // Data model (owner decision): keep per-user storage lightweight. We only
+    // persist the unlocked COUNT per game (user_games.achievements_unlocked) —
+    // the shared catalog `achievements` table already holds the definitions.
+    // We do NOT store a row per user × achievement (user_achievements), which
+    // would bloat the DB for little ranking value. user_achievements stays in
+    // the schema but is unused in v1.0 (future: "which achievements remain").
     await db
       .update(userGames)
       .set({ achievementsUnlocked: unlockedCount, librarySyncedAt: new Date() })
@@ -172,5 +145,6 @@ export async function syncLibrary(
     .set({ lastSyncedAt: new Date() })
     .where(eq(users.id, userId));
 
+  console.log(`[syncLibrary] user=${user[0].steamId} owned=${result.totalOwned} achievementSynced=${result.achievementSynced} skipped=${result.skipped} newMeta=${result.needsMetadata.length}`);
   return result;
 }

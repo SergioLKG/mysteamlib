@@ -161,6 +161,7 @@ export async function syncMetadata(
     }
   }
 
+  console.log(`[syncMetadata] processed=${result.processed} gamesUpdated=${result.gamesUpdated} hltbMatched=${result.hltbMatched} failures=${result.failures}`);
   return result;
 }
 

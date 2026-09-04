@@ -46,14 +46,15 @@ export async function runDailySync(cfg: BatchConfig = {}): Promise<unknown> {
     }
   }
 
-  return { ok: true, users: activeUsers.length, results };
+  const summary = { ok: true, users: activeUsers.length, results };
+  console.log('[sync-library]', JSON.stringify(summary));
+  return summary;
 }
 
 /**
  * Metadata cron entry point: refresh metadata (Store, schema, HLTB) for a
  * bounded set of games that are stale (missing or old `metadata_synced_at`).
- */
-export async function runMetadataSync(cfg: BatchConfig = {}): Promise<unknown> {
+ */export async function runMetadataSync(cfg: BatchConfig = {}): Promise<unknown> {
   if (!db) return { ok: false, reason: 'db-not-configured' };
   const config: Required<BatchConfig> = { ...DEFAULT_CONFIG, ...cfg };
 
@@ -64,7 +65,9 @@ export async function runMetadataSync(cfg: BatchConfig = {}): Promise<unknown> {
 
   const appids = [...new Set(ids.map((g) => g.appid))];
   const result = await syncMetadata(appids, { force: false });
-  return { ok: true, ...result };
+  const summary = { ok: true, ...result };
+  console.log('[sync-metadata]', JSON.stringify(summary));
+  return summary;
 }
 
 /**
