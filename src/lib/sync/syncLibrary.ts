@@ -119,10 +119,19 @@ export async function syncLibrary(
 
     await steamLimiter.next();
     const res = await getPlayerAchievements(user[0].steamId, g.appid).catch((e) => {
-      console.error(`GetPlayerAchievements failed for appid=${g.appid}`, e);
+      // Steam can return 403 for games where the user has no stats (e.g. never
+      // played). Don't let one failing game poison the run: log it, mark the
+      // game as attempted so it isn't retried EVERY sync (avoids API/rate
+      // burn + daily log spam). A manual refresh (refreshGame) or `force`
+      // re-attempts it deliberately.
+      console.warn(`[syncLibrary] GetPlayerAchievements failed for appid=${g.appid} (${user[0].steamId}); marking attempted. ${(e as Error).message}`);
       return null;
     });
     if (!res?.playerstats?.success) {
+      await db
+        .update(userGames)
+        .set({ librarySyncedAt: new Date() })
+        .where(and(eq(userGames.userId, user[0].id), eq(userGames.appid, g.appid)));
       result.skipped += 1;
       continue;
     }
