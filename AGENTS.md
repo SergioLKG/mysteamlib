@@ -7,6 +7,9 @@ Astro web app for **mysteamlib** — personal Steam library utility ("what to pl
 - `npm run build` — production build (verify before committing).
 - `npm run astro -- <cmd>` — pass through to Astro CLI (e.g. `npm run astro -- add svelte`).
 
+## Closing a phase / milestone — always end with "Tareas para el dev:"
+After finishing a phase or reaching a clean breakpoint (`punto y aparte`) at the end of a development session, the assistant MUST close its reply with a `Tareas para el dev:` block listing the concrete steps the developer (the owner) must do next. These are actions the agent needs to continue, or decisions/tests the developer must review. If there is genuinely nothing left for the developer to do, write something like `Escribir "continuar"` to signal the next session can proceed. Keep the list short, concrete, and ordered.
+
 ## Stack (locked)
 Astro SSR on Vercel (adapter) · Postgres **Neon** · **Drizzle** ORM · Steam OpenID auth · **Svelte** islands · Vercel cron 1×/day · Node 24.
 
@@ -25,9 +28,15 @@ Astro SSR on Vercel (adapter) · Postgres **Neon** · **Drizzle** ORM · Steam O
 - Do **not** imply Valve/Steam endorsement. Use official "Sign in through Steam" buttons only.
 - Data provided "as is" — disclaimers in UI for estimates (e.g. HLTB times).
 
-## Current state (02 sep 2026)
+## Current state (03 sep 2026)
 - **Fase 1 cerrada.** Deploy en producción: `https://mysteamlib.vercel.app`, `/api/health` → `{"status":"ok","db":"connected"}`.
 - Neon DB connected via Vercel Storage (`DATABASE_URL` + `POSTGRES_*` env on Vercel, mirrored in `.env.local`). `STEAM_API_KEY` + `SESSION_SECRET` set on Vercel + `.env.local`.
-- Drizzle wired: `src/lib/db/schema.ts` (table `health_check`), `src/lib/db/client.ts`, `drizzle.config.ts`, migrations in `drizzle/`. Scripts: `db:generate/migrate/push/studio`.
+- Drizzle wired: `src/lib/db/schema.ts` (7 tables: `health_check`, `users`, `games`, `achievements`, `user_games`, `user_achievements`, `hltb_matches`), `src/lib/db/client.ts`, `drizzle.config.ts`, migrations in `drizzle/` (0001 applied to Neon). Scripts: `db:generate/migrate/push/studio`.
 - `BaseLayout.astro` (in `src/layouts/`) integrates `@vercel/analytics` + `@vercel/speed-insights`. Required for all pages.
-- **In progress (Fase 2)**: full DB schema (`users`, `games`, `achievements`, `user_games`, `user_achievements`, `hltb_matches`), Steam/Store/HLTB wrappers, OpenID auth, sync jobs.
+- **Fase 2 casi cerrada (03 sep 2026)**:
+  - Steam wrappers: `src/lib/steam/webApi.ts` (`getOwnedGames`, `getPlayerAchievements`, `getSchemaForGame`, `getGlobalAchievementPercentagesForApp`, `getPlayerSummaries`) y `storeApi.ts` (`getStoreAppDetails`, backoff 429).
+  - **HLTB — DIFERIDO a v1.1** (decisión propietario 03 sep: investigar/posible fork de `hltb-client` y adaptarlo). `src/lib/hltb/client.ts` usa `hltb-client` solo como **base de investigación — NO es dependencia fijada ni activada**. Sync escrito para que un fallo/ausencia de HLTB **nunca bloquee** (marca `not_found`, sigue). Feature `03` funciona sin tiempos HLTB en v1.0.
+  - **Auth OpenID**: `src/lib/auth/openid.ts` (login URL + `check_authentication`), `src/lib/auth/session.ts` (HMAC cookie via `SESSION_SECRET`, 30d); endpoints `api/auth/login|callback|logout`; `src/middleware.ts` protects `/dashboard` + `api/games/*` (sets `context.locals.user`).
+  - **Sync**: `src/lib/sync/` — `syncLibrary` (idempotent, resumable via `library_synced_at`), `syncMetadata` (Store+schema+global% + HLTB, cached 90d, not_found never blocks), `runDailySync`/`runMetadataSync`/`refreshGame` (batched); cron endpoints `api/cron/sync-library|sync-metadata`; `api/games/[appid]/refresh.ts` (protected); crons in `vercel.json` (03:00 daily, Mon 04:00). Rate limiter in `lib/sync/rateLimiter.ts`.
+  - Env additions: `CRON_SECRET` (optional bearer for cron); `.env.example` recreated. `.env.local` needs `CRON_SECRET` too if set.
+- **Pendiente Fase 2**: verificación end-to-end en Vercel con usuario Steam real (login, biblioteca+logros poblados, cron, refresh).

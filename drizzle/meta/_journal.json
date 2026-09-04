@@ -8,6 +8,13 @@
       "when": 1788357827043,
       "tag": "0000_early_stellaris",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788436420119,
+      "tag": "0001_unique_kate_bishop",
+      "breakpoints": true
     }
   ]
 }
