@@ -65,7 +65,7 @@ export const achievements = pgTable(
     globalPercent: numeric('global_percent'),
     percentSyncedAt: timestamp('percent_synced_at', { withTimezone: true }),
   },
-  (t) => [index('achievements_appid_idx').on(t.appid)],
+  (t) => [uniqueIndex('achievements_appid_apiname_idx').on(t.appid, t.apiName)],
 );
 
 export const userGames = pgTable(
