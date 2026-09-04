@@ -84,9 +84,13 @@ export async function syncLibrary(
         },
       });
 
-    // Resumability: skip games whose achievement progress is already synced.
+    // Resumability: skip only games whose achievement progress is already
+    // fully synced (i.e. no row still has library_synced_at = NULL). A fresh
+    // user_games row just upserted above has NULL, so it gets processed now;
+    // games synced on a prior run (library_synced_at set) are skipped so a
+    // serverless run can resume where it left off.
     if (!opts.force) {
-      const done = await db
+      const pending = await db
         .select({ id: userGames.id })
         .from(userGames)
         .where(
@@ -97,7 +101,7 @@ export async function syncLibrary(
           ),
         )
         .limit(1);
-      if (done[0]) {
+      if (!pending[0]) {
         result.skipped += 1;
         continue;
       }

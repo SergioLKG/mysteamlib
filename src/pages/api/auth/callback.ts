@@ -43,6 +43,10 @@ export const GET: APIRoute = async (context) => {
     return new Response('Database not configured', { status: 500 });
   }
 
+  // Steam's communityvisibilitystate: 3 = Public, 1 = private. Profile being
+  // public (games/achievements visible) gates whether we can sync library data.
+  const visibility = profile?.communityvisibilitystate === 3 ? 'public' : 'private';
+
   let [user] = await db.select().from(users).where(eq(users.steamId, steamId));
 
   if (!user) {
@@ -52,13 +56,23 @@ export const GET: APIRoute = async (context) => {
         steamId,
         personaName: profile?.personaname ?? steamId,
         avatarUrl: profile?.avatarfull ?? null,
+        profileVisibility: visibility,
       })
       .returning();
     user = inserted[0];
-  } else if (profile && profile.personaname !== user.personaName) {
+  } else if (
+    profile &&
+    (profile.personaname !== user.personaName ||
+      profile.avatarfull !== user.avatarUrl ||
+      visibility !== user.profileVisibility)
+  ) {
     const updated = await db
       .update(users)
-      .set({ personaName: profile.personaname, avatarUrl: profile.avatarfull ?? user.avatarUrl })
+      .set({
+        personaName: profile.personaname,
+        avatarUrl: profile.avatarfull ?? user.avatarUrl,
+        profileVisibility: visibility,
+      })
       .where(eq(users.id, user.id))
       .returning();
     user = updated[0];

@@ -1,6 +1,6 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client';
-import { users, userGames } from '../db/schema';
+import { users, userGames, games } from '../db/schema';
 import { syncLibrary, type SyncResult } from './syncLibrary';
 import { syncMetadata, type SyncMetadataResult } from './syncMetadata';
 
@@ -59,11 +59,12 @@ export async function runDailySync(cfg: BatchConfig = {}): Promise<unknown> {
   const config: Required<BatchConfig> = { ...DEFAULT_CONFIG, ...cfg };
 
   const ids = await db
-    .select({ appid: userGames.appid })
-    .from(userGames)
+    .select({ appid: games.appid })
+    .from(games)
+    .where(isNull(games.metadataSyncedAt))
     .limit(config.maxMetadataApps);
 
-  const appids = [...new Set(ids.map((g) => g.appid))];
+  const appids = ids.map((g) => g.appid);
   const result = await syncMetadata(appids, { force: false });
   const summary = { ok: true, ...result };
   console.log('[sync-metadata]', JSON.stringify(summary));
