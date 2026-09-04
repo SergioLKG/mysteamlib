@@ -1,7 +1,92 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const user = Astro.locals.user;
+const title = 'mysteamlib';
 ---
 
-<BaseLayout title="mysteamlib">
-  <h1>mysteamlib</h1>
+<BaseLayout {title}>
+  <header class="site-header">
+    <a class="brand" href="/">mysteamlib</a>
+    {user && (
+      <nav>
+        <a href="/dashboard">Dashboard</a>
+        <form method="POST" action="/api/auth/logout">
+          <button type="submit">Cerrar sesión</button>
+        </form>
+      </nav>
+    )}
+  </header>
+
+  <main class="hero">
+    <h1>“¿Qué juego me platinaste ahora?”</h1>
+    <p class="tagline">
+      Pasa por tu biblioteca de Steam, ve tu progreso y descubre qué títulos te
+      quedan más cerca de conseguir el 100&nbsp;%.
+    </p>
+
+    {user ? (
+      <div>
+        <a class="cta" href="/dashboard">Ir a mi biblioteca</a>
+      </div>
+    ) : (
+      <a class="steam-sign-in" href="/api/auth/login">
+        <img
+          src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png"
+          alt="Sign in through Steam"
+          width="180"
+          height="35"
+        />
+      </a>
+    )}
+
+    <p class="disclaimer">
+      mysteamlib no está afiliado a Valve Corporation ni a Steam. Los tiempos
+      de juego y datos provienen de tu perfil público de Steam y se muestran
+      “tal cual”. Inicia sesión solo con tu SteamID mediante OpenID; nunca
+      pedimos tu contraseña.
+    </p>
+  </main>
 </BaseLayout>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+  }
+  .brand {
+    font-weight: 700;
+    text-decoration: none;
+    color: inherit;
+  }
+  nav {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  .hero {
+    max-width: 34rem;
+    margin: 4rem auto;
+    text-align: center;
+    padding: 0 1.5rem;
+  }
+  .tagline {
+    color: var(--muted, #6b7280);
+  }
+  .cta {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #1b2838;
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .disclaimer {
+    margin-top: 3rem;
+    font-size: 0.8rem;
+    color: var(--muted, #6b7280);
+  }
+</style>

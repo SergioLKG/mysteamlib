@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const user = Astro.locals.user!;
+const title = 'Dashboard · mysteamlib';
+---
+
+<BaseLayout {title}>
+  <header class="site-header">
+    <a class="brand" href="/">mysteamlib</a>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <form method="POST" action="/api/auth/logout">
+        <button type="submit">Cerrar sesión</button>
+      </form>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Dashboard</h1>
+    <p>
+      Conectado como <strong>{user.steamId}</strong>
+      {user.userId ? ` (id ${user.userId})` : ''}.
+    </p>
+    <p class="placeholder">
+      Aquí aparecerá la lista “qué platinarse ahora” (Fase 3): tus juegos con
+      logros pendientes, ordenados por tiempo hasta el platinum. Próximamente.
+    </p>
+  </main>
+</BaseLayout>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+  }
+  .brand {
+    font-weight: 700;
+    text-decoration: none;
+    color: inherit;
+  }
+  nav {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  main {
+    max-width: 46rem;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+  }
+  .placeholder {
+    color: var(--muted, #6b7280);
+  }
+</style>
