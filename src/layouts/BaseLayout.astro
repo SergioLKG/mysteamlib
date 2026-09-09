@@ -4,9 +4,10 @@ import SpeedInsights from '@vercel/speed-insights/astro';
 
 interface Props {
   title?: string;
+  description?: string;
 }
 
-const { title = 'mysteamlib' } = Astro.props;
+const { title = 'mysteamlib', description } = Astro.props;
 ---
 
 <!doctype html>
@@ -21,6 +22,7 @@ const { title = 'mysteamlib' } = Astro.props;
     <link rel="preconnect" href="https://media.steampowered.com" crossorigin />
     <link rel="preconnect" href="https://avatars.steamstatic.com" crossorigin />
     <link rel="preconnect" href="https://community.fastly.steamstatic.com" crossorigin />
+    {description && <meta name="description" content={description} />}
     <title>{title}</title>
   </head>
   <body>

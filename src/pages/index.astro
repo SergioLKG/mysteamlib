@@ -4,6 +4,8 @@ import SiteHeader from '../components/SiteHeader.astro';
 
 const user = Astro.locals.user;
 const title = 'mysteamlib';
+const description =
+  'Revisa tu biblioteca de Steam, sigue tu progreso y descubre qué juego te queda más cerca del 100 %.';
 
 const tools = [
   {
@@ -21,7 +23,7 @@ const tools = [
 ];
 ---
 
-<BaseLayout {title}>
+<BaseLayout {title} {description}>
   <SiteHeader {user} page="home" />
 
   <main id="main-content" class="page">

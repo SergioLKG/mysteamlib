@@ -30,15 +30,19 @@
     search: string;
     progress: string;
     showCompleted: boolean;
-    achievementsMin: string;
-    achievementsMax: string;
-    timeMin: string;
-    timeMax: string;
+    achievementsMin: number;
+    achievementsMax: number;
+    timeMin: number;
+    timeMax: number;
     includeNoTime: boolean;
     genre: string;
     sort: string;
     direction: string;
   }
+
+  // Caps for the dual-range sliders (min always 0).
+  const ACH_MAX = 150;
+  const TIME_MAX = 500;
 
   let { syncing = false }: { syncing?: boolean } = $props();
 
@@ -46,10 +50,10 @@
     search: '',
     progress: 'all',
     showCompleted: false,
-    achievementsMin: '',
-    achievementsMax: '',
-    timeMin: '',
-    timeMax: '',
+    achievementsMin: 0,
+    achievementsMax: ACH_MAX,
+    timeMin: 0,
+    timeMax: TIME_MAX,
     includeNoTime: true,
     genre: '',
     sort: 'difficulty',
@@ -71,10 +75,10 @@
     (filters.search !== '' ? 1 : 0) +
       (filters.progress !== 'all' ? 1 : 0) +
       (filters.showCompleted ? 1 : 0) +
-      (filters.achievementsMin !== '' ? 1 : 0) +
-      (filters.achievementsMax !== '' ? 1 : 0) +
-      (filters.timeMin !== '' ? 1 : 0) +
-      (filters.timeMax !== '' ? 1 : 0) +
+      (filters.achievementsMin > 0 ? 1 : 0) +
+      (filters.achievementsMax < ACH_MAX ? 1 : 0) +
+      (filters.timeMin > 0 ? 1 : 0) +
+      (filters.timeMax < TIME_MAX ? 1 : 0) +
       (filters.includeNoTime ? 0 : 1) +
       (filters.genre !== '' ? 1 : 0),
   );
@@ -130,10 +134,10 @@
     params.set('sort', filters.sort);
     params.set('direction', filters.direction);
     if (filters.search) params.set('search', filters.search);
-    if (filters.achievementsMin) params.set('achievementsMin', filters.achievementsMin);
-    if (filters.achievementsMax) params.set('achievementsMax', filters.achievementsMax);
-    if (filters.timeMin) params.set('timeMinHours', filters.timeMin);
-    if (filters.timeMax) params.set('timeMaxHours', filters.timeMax);
+    if (filters.achievementsMin > 0) params.set('achievementsMin', String(filters.achievementsMin));
+    if (filters.achievementsMax < ACH_MAX) params.set('achievementsMax', String(filters.achievementsMax));
+    if (filters.timeMin > 0) params.set('timeMinHours', String(filters.timeMin));
+    if (filters.timeMax < TIME_MAX) params.set('timeMaxHours', String(filters.timeMax));
     if (filters.genre) params.set('genre', filters.genre);
     return params;
   }
@@ -195,15 +199,19 @@
       search: '',
       progress: 'all',
       showCompleted: false,
-      achievementsMin: '',
-      achievementsMax: '',
-      timeMin: '',
-      timeMax: '',
+      achievementsMin: 0,
+      achievementsMax: ACH_MAX,
+      timeMin: 0,
+      timeMax: TIME_MAX,
       includeNoTime: true,
       genre: '',
       sort: filters.sort,
       direction: filters.direction,
     };
+  }
+
+  function toggleDirection(): void {
+    filters.direction = filters.direction === 'desc' ? 'asc' : 'desc';
   }
 
   function cmpName(a: Candidate, b: Candidate): number {
@@ -219,10 +227,10 @@
 
   function buildView(all: Candidate[], f: Filters): Candidate[] {
     const q = f.search.trim().toLowerCase();
-    const timeMin = f.timeMin === '' ? undefined : Number(f.timeMin);
-    const timeMax = f.timeMax === '' ? undefined : Number(f.timeMax);
-    const remMin = f.achievementsMin === '' ? undefined : Number(f.achievementsMin);
-    const remMax = f.achievementsMax === '' ? undefined : Number(f.achievementsMax);
+    const timeMin = f.timeMin > 0 ? f.timeMin : undefined;
+    const timeMax = f.timeMax < TIME_MAX ? f.timeMax : undefined;
+    const remMin = f.achievementsMin > 0 ? f.achievementsMin : undefined;
+    const remMax = f.achievementsMax < ACH_MAX ? f.achievementsMax : undefined;
     const showCompleted = f.showCompleted || f.progress === 'completed';
 
     const list: Candidate[] = [];
@@ -263,6 +271,11 @@
     return list;
   }
 
+  function clampNum(n: number, min: number, max: number): number {
+  if (!Number.isFinite(n)) return min;
+  return Math.min(max, Math.max(min, Math.round(n)));
+}
+
   function initFromUrl(): void {
     const sp = new URLSearchParams(location.search);
     const next: Filters = { ...filters };
@@ -279,13 +292,13 @@
     const search = sp.get('search');
     if (search) next.search = search;
     const achievementsMin = sp.get('achievementsMin');
-    if (achievementsMin) next.achievementsMin = achievementsMin;
+    if (achievementsMin) next.achievementsMin = clampNum(Number(achievementsMin), 0, ACH_MAX);
     const achievementsMax = sp.get('achievementsMax');
-    if (achievementsMax) next.achievementsMax = achievementsMax;
+    if (achievementsMax) next.achievementsMax = clampNum(Number(achievementsMax), 0, ACH_MAX);
     const timeMin = sp.get('timeMinHours');
-    if (timeMin) next.timeMin = timeMin;
+    if (timeMin) next.timeMin = clampNum(Number(timeMin), 0, TIME_MAX);
     const timeMax = sp.get('timeMaxHours');
-    if (timeMax) next.timeMax = timeMax;
+    if (timeMax) next.timeMax = clampNum(Number(timeMax), 0, TIME_MAX);
     const genre = sp.get('genre');
     if (genre) next.genre = genre;
     // Set with an explicit write so the URL-sync effect re-runs afterwards.
@@ -301,16 +314,8 @@
     controller?.abort();
   });
 
-  function hours(minutes: number): string {
-    const h = minutes / 60;
-    if (h < 1) return `${Math.max(Math.round(minutes), 0)}min`;
-    return `${Math.round(h)}h`;
-  }
-
-  function timeLabel(c: Candidate): string {
-    if (!c.hasTimeEstimate || c.estimatedTimeToPlatinum === null) return 'Sin dato';
-    const t = Math.round(c.estimatedTimeToPlatinum);
-    return `~${t}h`;
+  function timeBadge(c: Candidate): string {
+    return `~${Math.round(c.estimatedTimeToPlatinum ?? 0)}h`;
   }
 
   function genresOf(c: Candidate): string {
@@ -341,7 +346,9 @@
         {filters}
         {availableGenres}
         activeCount={activeCount}
+        direction={filters.direction}
         onreset={resetFilters}
+        onToggleDirection={toggleDirection}
         idPrefix="side"
       />
     </aside>
@@ -376,33 +383,49 @@
         pueden aparecer con datos incompletos hasta que termine.
       </p>
     {/if}
-    <p class="count">
-      <strong>{total}</strong> {total === 1 ? 'candidato' : 'candidatos'}
-      {#if partialEstimates > 0}
-        · {partialEstimates} sin estimación de tiempo
-      {/if}
-      <button class="link-btn refresh" type="button" onclick={refresh} disabled={loading}>
-        {loading ? 'Actualizando…' : 'Actualizar datos'}
-      </button>
-    </p>
     {#if error}
       <p class="error" role="alert">
         No se pudo cargar la lista: {error}. Reintenta en unos segundos o recarga la página.
       </p>
     {/if}
+    <div class="count-row">
+      <p class="count">
+        <strong>{total}</strong> {total === 1 ? 'candidato' : 'candidatos'}
+        {#if partialEstimates > 0}
+          · {partialEstimates} sin estimación de tiempo
+        {/if}
+      </p>
+      <div class="count-actions">
+        <button
+          class="dir-toggle"
+          type="button"
+          onclick={toggleDirection}
+          title="Cambiar dirección del orden"
+          aria-label={`Cambiar dirección del orden — actualmente ${filters.direction === 'asc' ? 'ascendente' : 'descendente'}`}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 8 4-4 4 4" />
+            <path d="M7 4v16" />
+            <path d="m21 16-4 4-4-4" />
+            <path d="M17 20V4" />
+          </svg>
+          <span class="dir-label">{filters.direction === 'asc' ? 'Asc' : 'Desc'}</span>
+        </button>
+        <button class="link-btn refresh" type="button" onclick={refresh} disabled={loading}>
+          {loading ? 'Actualizando…' : 'Actualizar datos'}
+        </button>
+      </div>
+    </div>
   </div>
 
   {#if loading && games.length === 0 && !error}
     <div class="skeleton" role="status" aria-label="Cargando mi lista">
-      {#each Array(7) as _, i (i)}
+      {#each Array(6) as _, i (i)}
         <div class="skeleton-card" aria-hidden="true">
           <span class="sk sk-cover"></span>
-          <span class="sk-block">
-            <span class="sk sk-line sk-name"></span>
-            <span class="sk sk-line sk-meta"></span>
-            <span class="sk sk-rail"></span>
-          </span>
-          <span class="sk sk-stats"></span>
+          <span class="sk sk-line sk-name"></span>
+          <span class="sk sk-line sk-meta"></span>
+          <span class="sk sk-rail"></span>
         </div>
       {/each}
     </div>
@@ -433,29 +456,57 @@
         a limpiarlos.
       </p>
       {#if hasActiveFilters}
-        <button class="link-btn" type="button" onclick={resetFilters}>Limpiar filtros</button>
+        <button class="btn-reset" type="button" onclick={resetFilters}>Limpiar filtros</button>
       {/if}
     </div>
   {:else}
     <ul class="grid">
       {#each view as c, i (c.appid)}
-        <li class="card" style:--i={Math.min(i, 7)}>
-          <a
-            class="cover store-link"
-            href={`https://store.steampowered.com/app/${c.appid}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`${c.name} en Steam`}
-            title={`Ver ${c.name} en la tienda de Steam`}
-          >
-            {#if c.headerImageUrl}
-              <img src={c.headerImageUrl} alt="" width="92" height="42" loading="lazy" />
-            {:else}
-              <div class="cover-fallback" aria-hidden="true">?</div>
-            {/if}
-          </a>
+        <li
+          class="card {c.achievementsRemaining === 0 ? 'platinum' : ''}"
+          style:--i={Math.min(i, 7)}
+        >
+          <div class="media">
+            <a
+              class="store-link cover"
+              href={`https://store.steampowered.com/app/${c.appid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${c.name} — abrir en Steam`}
+              title={`Ver ${c.name} en la tienda de Steam`}
+            >
+              {#if c.headerImageUrl}
+                <img src={c.headerImageUrl} alt="" width="460" height="215" loading="lazy" />
+              {:else}
+                <div class="cover-fallback" aria-hidden="true">?</div>
+              {/if}
+            </a>
+            <div class="corner">
+              {#if c.achievementsRemaining === 0}
+                <span class="seal">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                    <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                    <path d="M4 22h16" />
+                    <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                    <path d="M14 14.66V17c0 .55.47.98.97 1.21 1.18.54 2.03 2.03 2.03 3.79" />
+                    <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                  </svg>
+                  Platinado
+                </span>
+              {:else}
+                <span class="badge">Faltan {c.achievementsRemaining}</span>
+                {#if c.hasTimeEstimate && c.estimatedTimeToPlatinum !== null}
+                  <span class="badge">{timeBadge(c)}</span>
+                {/if}
+                <span class="badge diff-{difficultyClass(c.difficultyScore)}">
+                  {difficultyLabel(c.difficultyScore)}
+                </span>
+              {/if}
+            </div>
+          </div>
 
-          <div class="info">
+          <div class="body">
             <a
               class="store-link name-link"
               href={`https://store.steampowered.com/app/${c.appid}`}
@@ -463,47 +514,27 @@
               rel="noopener noreferrer"
               title={`Ver ${c.name} en la tienda de Steam`}
             >
-              <h2 class="name">{c.name}</h2>
+              <h3 class="name">{c.name}</h3>
             </a>
             <p class="meta">
               {genresOf(c)}
               {#if yearOf(c)}· {yearOf(c)}{/if}
             </p>
-            <div class="progress" role="img" aria-label={`${c.completionPercent}% completado`}>
-              <div class="progress-rail">
-                <div class="progress-fill" style:width="{c.completionPercent}%"></div>
+            <div class="bar-wrap">
+              <div
+                class="bar"
+                role="progressbar"
+                aria-valuenow={c.completionPercent}
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-label={`${c.name} — ${c.completionPercent}% completado`}
+              >
+                <div class="bar-fill" style:width="{c.completionPercent}%"></div>
+                <span class="bar-text">{c.completionPercent}%</span>
               </div>
-              <span class="progress-num">{c.completionPercent}%</span>
-              <span class="counts">{c.achievementsUnlocked}/{c.totalAchievements}</span>
+              <span class="bar-counts">{c.achievementsUnlocked}/{c.totalAchievements}</span>
             </div>
           </div>
-
-          <dl class="stats">
-            <div>
-              <dt>Faltan</dt>
-              <dd>{c.achievementsRemaining}</dd>
-            </div>
-            <div>
-              <dt>Tiempo Estimado</dt>
-              <dd class={c.hasTimeEstimate ? '' : 'muted'}>
-                {timeLabel(c)}
-                {#if !c.hasTimeEstimate}
-                  <span class="tip" title="Estimación basada en HowLongToBeat. Sin dato para este juego, ordena aparte, nunca se inventa." aria-label="Sin estimación de tiempo">ⓘ</span>
-                {/if}
-              </dd>
-            </div>
-            <div>
-              <dt>Dificultad</dt>
-              <dd>
-                <span
-                  class="badge {difficultyClass(c.difficultyScore)}"
-                  title={`Score ${Number(c.difficultyScore).toFixed(1)} (menor = más cerca de platinar)`}
-                >
-                  {difficultyLabel(c.difficultyScore)}
-                </span>
-              </dd>
-            </div>
-          </dl>
         </li>
       {/each}
     </ul>
@@ -543,7 +574,9 @@
           filters={filters}
           availableGenres={availableGenres}
           activeCount={activeCount}
+          direction={filters.direction}
           onreset={resetFilters}
+          onToggleDirection={toggleDirection}
           idPrefix="modal"
         />
       </div>
@@ -763,11 +796,61 @@
   }
 
   .count .refresh {
-    margin-left: 0.5rem;
+    margin-left: 0;
+  }
+  .count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .count-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .dir-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.32rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
+    background: color-mix(in srgb, var(--surface, #0f1420) 70%, #000);
+    color: var(--text, #f1f5f9);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .dir-toggle:hover {
+    border-color: var(--accent, #7c8dff);
+  }
+  .dir-label {
+    font-variant-numeric: tabular-nums;
+  }
+  .count .refresh {
+    color: var(--muted, #94a3b8);
+    text-decoration: none;
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
+    border-radius: 999px;
+    padding: 0.32rem 0.8rem;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .count .refresh:hover {
+    color: var(--text, #f1f5f9);
+    border-color: var(--accent, #7c8dff);
   }
   .count .refresh:disabled {
     opacity: 0.5;
     cursor: default;
+  }
+  .dir-toggle:focus-visible {
+    outline: 2px solid var(--accent, #7c8dff);
+    outline-offset: 2px;
   }
 
   .skeleton {
@@ -776,12 +859,9 @@
   }
   .skeleton-card {
     display: grid;
-    grid-template-columns: 92px 1fr auto;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.7rem 0.9rem;
-    min-height: 90px;
-    border-radius: 14px;
+    gap: 0.9rem;
+    padding: 0.9rem;
+    border-radius: 16px;
     border: 1px solid var(--border, rgba(148, 163, 184, 0.1));
     background: color-mix(in srgb, var(--surface, #0f1420) 75%, #000);
   }
@@ -798,30 +878,21 @@
     animation: shim 1.4s ease-in-out infinite;
   }
   .sk-cover {
-    width: 92px;
-    height: 42px;
-  }
-  .sk-block {
-    display: grid;
-    gap: 0.35rem;
-    min-width: 0;
+    border-radius: 12px;
+    aspect-ratio: 460 / 215;
   }
   .sk-name {
     height: 14px;
-    width: 55%;
+    width: 70%;
   }
   .sk-meta {
     height: 11px;
-    width: 35%;
+    width: 40%;
   }
   .sk-rail {
-    height: 7px;
+    height: 22px;
     border-radius: 999px;
     width: 100%;
-  }
-  .sk-stats {
-    width: 170px;
-    height: 42px;
   }
   @keyframes shim {
     from {
@@ -858,6 +929,27 @@
     max-width: 34ch;
     text-wrap: pretty;
   }
+  .btn-reset {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 10px;
+    color: var(--text, #f1f5f9);
+    background: color-mix(in srgb, var(--surface, #0f1420) 60%, #000);
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.28));
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    touch-action: manipulation;
+  }
+  .btn-reset:hover {
+    border-color: var(--accent, #7c8dff);
+    background: color-mix(in srgb, var(--accent, #7c8dff) 12%, transparent);
+  }
+  .btn-reset:focus-visible {
+    outline: 2px solid var(--accent, #7c8dff);
+    outline-offset: 2px;
+  }
 
   .grid {
     list-style: none;
@@ -869,22 +961,21 @@
   }
 
   @media (min-width: 1024px) {
-    .grid {
+    .grid,
+    .skeleton {
       grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
     }
   }
 
   .card {
     display: grid;
-    grid-template-columns: 92px 1fr auto;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.7rem 0.9rem;
-    border-radius: 14px;
+    gap: 0.9rem;
+    padding: 0.9rem;
+    border-radius: 16px;
     border: 1px solid var(--border, rgba(148, 163, 184, 0.14));
     background: color-mix(in srgb, var(--surface, #0f1420) 75%, #000);
     content-visibility: auto;
-    contain-intrinsic-size: auto 90px;
+    contain-intrinsic-size: auto 300px;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     animation: card-in 0.34s cubic-bezier(0.22, 0.68, 0.28, 1) both;
     animation-delay: calc(var(--i, 0) * 30ms);
@@ -921,13 +1012,17 @@
     min-width: 0;
   }
 
+  .media {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 460 / 215;
+    background: linear-gradient(135deg, #334155, #1e293b);
+  }
   .cover {
     display: block;
-    width: 92px;
-    height: 42px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: linear-gradient(135deg, #334155, #1e293b);
+    width: 100%;
+    height: 100%;
   }
   .cover img {
     display: block;
@@ -943,19 +1038,74 @@
     font-weight: 700;
   }
 
-  .info {
+  .corner {
+    position: absolute;
+    top: 0.55rem;
+    right: 0.55rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    max-width: 94%;
+    pointer-events: none;
+  }
+  .corner .badge {
+    display: inline-block;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text, #eef1ff);
+    background: color-mix(in srgb, #0b1020 84%, transparent);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+  .badge.diff-easy {
+    color: #34d399;
+    border-color: color-mix(in srgb, #34d399 50%, transparent);
+  }
+  .badge.diff-mid {
+    color: #fbbf24;
+    border-color: color-mix(in srgb, #fbbf24 50%, transparent);
+  }
+  .badge.diff-hard {
+    color: #fb7185;
+    border-color: color-mix(in srgb, #fb7185 50%, transparent);
+  }
+
+  .seal {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #0b1020;
+    background: linear-gradient(135deg, #e6e9f8, #f8f9ff 55%, #c3c8de);
+    border: 1px solid rgba(241, 243, 251, 0.75);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .body {
+    display: grid;
+    gap: 0.45rem;
     min-width: 0;
   }
   .name {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.06rem;
+    line-height: 1.25;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .meta {
-    margin: 0.1rem 0 0.5rem;
+    margin: 0;
     font-size: 0.78rem;
     color: var(--muted, #94a3b8);
     white-space: nowrap;
@@ -963,86 +1113,63 @@
     text-overflow: ellipsis;
   }
 
-  .progress {
+  .bar-wrap {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    max-width: 420px;
+    gap: 0.6rem;
+    margin-top: 0.15rem;
   }
-  .progress-rail {
+  .bar {
+    position: relative;
     flex: 1 1 auto;
-    height: 7px;
+    height: 22px;
+    min-width: 0;
     border-radius: 999px;
     background: color-mix(in srgb, var(--text, #f1f5f9) 12%, transparent);
     overflow: hidden;
   }
-  .progress-fill {
+  .bar-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, #7c8dff, #b06ab3);
   }
-  .progress-num {
-    font-size: 0.72rem;
-    font-weight: 700;
-    min-width: 2.6rem;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  .counts {
-    font-size: 0.72rem;
-    color: var(--muted, #94a3b8);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .stats {
+  .bar-text {
+    position: relative;
     display: flex;
-    gap: 1.15rem;
-    margin: 0;
-  }
-  .stats div {
-    text-align: right;
-  }
-  .stats dt {
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--muted, #94a3b8);
-  }
-  .stats dd {
-    margin: 0.15rem 0 0;
-    font-size: 0.9rem;
-    font-weight: 700;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 0.5rem;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
     font-variant-numeric: tabular-nums;
   }
-  .muted {
-    color: var(--muted, #94a3b8);
-    font-weight: 500 !important;
-  }
-  .tip {
-    font-size: 0.75rem;
-    cursor: help;
+  .bar-counts {
+    flex: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text, #f1f5f9);
+    font-variant-numeric: tabular-nums;
   }
 
-  .badge {
-    display: inline-block;
-    padding: 0.16rem 0.55rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
+  .card.platinum {
+    border-color: color-mix(in srgb, #cdd0e4 55%, transparent);
+    background: linear-gradient(
+      160deg,
+      color-mix(in srgb, #cdd0e4 11%, var(--surface, #0f1420)) 0%,
+      color-mix(in srgb, #cdd0e4 3%, var(--surface, #0f1420)) 55%,
+      var(--surface, #0f1420) 100%
+    );
   }
-  .badge.easy {
-    color: #34d399;
-    background: color-mix(in srgb, #34d399 14%, transparent);
+  .card.platinum:hover {
+    border-color: rgba(205, 208, 228, 0.75);
   }
-  .badge.mid {
-    color: #fbbf24;
-    background: color-mix(in srgb, #fbbf24 14%, transparent);
-  }
-  .badge.hard {
-    color: #fb7185;
-    background: color-mix(in srgb, #fb7185 14%, transparent);
+  .card.platinum .bar-fill {
+    background: linear-gradient(90deg, #8b92b3, #b9bed6);
   }
 
   .footnote {
@@ -1062,7 +1189,10 @@
     .modal-backdrop,
     .modal,
     .modal-close,
-    .link-btn {
+    .link-btn,
+    .dir-toggle,
+    .bar,
+    .bar-text {
       transition: none;
     }
     .pulse,
@@ -1071,25 +1201,6 @@
     }
     .card {
       animation: none;
-    }
-  }
-
-  @media (max-width: 720px) {
-    .card,
-    .skeleton-card {
-      grid-template-columns: 92px 1fr;
-    }
-    .skeleton-card .sk-stats {
-      display: none;
-    }
-    .stats {
-      grid-column: 1 / -1;
-      justify-content: space-between;
-      padding-top: 0.4rem;
-      border-top: 1px solid var(--border, rgba(148, 163, 184, 0.12));
-    }
-    .stats div {
-      text-align: left;
     }
   }
 </style>

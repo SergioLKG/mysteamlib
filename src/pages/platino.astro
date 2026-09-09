@@ -7,6 +7,8 @@ import { eq } from 'drizzle-orm';
 
 const user = Astro.locals.user!;
 const title = 'Mi próximo platino · mysteamlib';
+const description =
+  'Mis juegos de Steam con logros pendientes, ordenados por lo cerca que estoy del 100 %. Filtro y decido cuál platinar ahora.';
 
 let syncing = false;
 if (db) {
@@ -19,7 +21,7 @@ if (db) {
 }
 ---
 
-<DashLayout {title} page="platino" user={user}>
+<DashLayout {title} {description} page="platino" user={user}>
   <main id="main-content" class="page">
     <div class="hero">
       <h1>Mi próximo platino</h1>
@@ -35,9 +37,9 @@ if (db) {
 
 <style>
   .page {
-    max-width: min(88rem, calc(100vw - 3rem));
+    max-width: min(96rem, calc(100vw - 2rem));
     margin: 0 auto;
-    padding: 1.75rem 1.5rem 4rem;
+    padding: 2rem 1rem 4rem;
   }
   .hero {
     text-align: center;
