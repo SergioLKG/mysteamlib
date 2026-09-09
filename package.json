@@ -16,13 +16,16 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@astrojs/svelte": "^9.0.1",
     "@astrojs/vercel": "^11.0.9",
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "astro": "^7.2.9",
     "drizzle-orm": "^0.45.2",
-    "hltb-client": "^1.0.1"
+    "hltb-client": "^1.0.1",
+    "svelte": "^5.57.0",
+    "typescript": "^6.0.3"
   },
   "overrides": {
     "path-to-regexp": "^6.3.0"

@@ -1,57 +1,143 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import LibraryExplorer from '../components/LibraryExplorer.svelte';
+import { db } from '../lib/db/client';
+import { users } from '../lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 const user = Astro.locals.user!;
-const title = 'Dashboard · mysteamlib';
+const title = 'Qué platinarse ahora · mysteamlib';
+
+let syncing = false;
+if (db) {
+  const row = await db
+    .select({ lastSyncedAt: users.lastSyncedAt })
+    .from(users)
+    .where(eq(users.id, user.userId))
+    .limit(1);
+  syncing = !row[0]?.lastSyncedAt;
+}
 ---
 
 <BaseLayout {title}>
   <header class="site-header">
     <a class="brand" href="/">mysteamlib</a>
     <nav>
-      <a href="/dashboard">Dashboard</a>
+      <a href="/dashboard" aria-current="page">Qué platinarse ahora</a>
+      <span class="who">{user.steamId}</span>
       <form method="POST" action="/api/auth/logout">
-        <button type="submit">Cerrar sesión</button>
+        <button type="submit" class="ghost">Cerrar sesión</button>
       </form>
     </nav>
   </header>
 
-  <main>
-    <h1>Dashboard</h1>
-    <p>
-      Conectado como <strong>{user.steamId}</strong>
-      {user.userId ? ` (id ${user.userId})` : ''}.
-    </p>
-    <p class="placeholder">
-      Aquí aparecerá la lista “qué platinarse ahora” (Fase 3): tus juegos con
-      logros pendientes, ordenados por tiempo hasta el platinum. Próximamente.
-    </p>
+  <main id="main-content">
+    <div class="hero">
+      <h1>Qué platinarse ahora</h1>
+      <p class="lede">
+        Tus juegos con logros pendientes, ordenados por lo cerca que estás del
+        100%. Ajusta los filtros y elige el siguiente trofeo.
+      </p>
+    </div>
+
+    <LibraryExplorer client:load {syncing} />
   </main>
 </BaseLayout>
+
+<style is:global>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0e17;
+    --surface: #111724;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: rgba(148, 163, 184, 0.16);
+    --accent: #7c8dff;
+    --accent-2: #b06ab3;
+  }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(124, 141, 255, 0.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(176, 106, 179, 0.12), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+</style>
 
 <style>
   .site-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 1rem;
     padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
   }
   .brand {
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 1.05rem;
     text-decoration: none;
     color: inherit;
+    letter-spacing: -0.01em;
   }
   nav {
     display: flex;
     gap: 1rem;
     align-items: center;
+    font-size: 0.9rem;
   }
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  nav a[aria-current='page'] {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .who {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ghost {
+    font: inherit;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .ghost:hover {
+    color: var(--text);
+    border-color: var(--border);
+  }
+
   main {
-    max-width: 46rem;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
   }
-  .placeholder {
-    color: var(--muted, #6b7280);
+
+  .hero h1 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    background: linear-gradient(90deg, #a5b4fc, #e0a3e3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .lede {
+    margin: 0 0 1.5rem;
+    color: var(--muted);
+    max-width: 46rem;
+    line-height: 1.5;
   }
 </style>

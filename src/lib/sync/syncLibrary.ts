@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client';
-import { games, users, userGames } from '../db/schema';
+import { achievements, games, users, userAchievements, userGames } from '../db/schema';
 import { getOwnedGames, getPlayerAchievements } from '../steam/webApi';
 import { RateLimiter } from './rateLimiter';
 
@@ -139,12 +139,57 @@ export async function syncLibrary(
     const ach = res.playerstats.achievements ?? [];
     const unlockedCount = ach.filter((a) => a.achieved === 1).length;
 
-    // Data model (owner decision): keep per-user storage lightweight. We only
-    // persist the unlocked COUNT per game (user_games.achievements_unlocked) —
-    // the shared catalog `achievements` table already holds the definitions.
-    // We do NOT store a row per user × achievement (user_achievements), which
-    // would bloat the DB for little ranking value. user_achievements stays in
-    // the schema but is unused in v1.0 (future: "which achievements remain").
+    // Fase 3 (owner decision 09 sep 2026): populate per-user achievement state.
+    // GetPlayerAchievements returns the full schema list with the achieved flag,
+    // so we upsert each row into the shared catalog (idempotent via the
+    // (appid, api_name) unique index — self-heals games whose metadata sync
+    // hasn't run yet) and store the user's unlock state in user_achievements.
+    // This is what lets Fase 3 compute avg_global_rarity_remaining ("rarity of
+    // the achievements you're still missing") accurately and unlocks future
+    // per-achievement views. The badge count still lands in user_games.
+    const withApiName = ach.filter((a) => a.apiname);
+
+    if (withApiName.length) {
+      await db
+        .insert(achievements)
+        .values(
+          withApiName.map((a) => ({
+            appid: g.appid,
+            apiName: a.apiname as string,
+            displayName: a.name,
+          })),
+        )
+        .onConflictDoNothing();
+
+      const catalog = await db
+        .select({ id: achievements.id, apiName: achievements.apiName })
+        .from(achievements)
+        .where(eq(achievements.appid, g.appid));
+      const catalogByApi = new Map(catalog.map((c) => [c.apiName, c.id]));
+
+      const unlockRows = withApiName
+        .filter((a) => catalogByApi.has(a.apiname as string))
+        .map((a) => ({
+          userId: user[0].id,
+          achievementId: catalogByApi.get(a.apiname as string) as string,
+          unlocked: a.achieved === 1,
+          unlockedAt: a.unlocktime ? new Date(a.unlocktime * 1000) : null,
+        }));
+
+      if (unlockRows.length) {
+        await db
+          .insert(userAchievements)
+          .values(unlockRows)
+          .onConflictDoUpdate({
+            target: [userAchievements.userId, userAchievements.achievementId],
+            set: {
+              unlocked: sql`excluded.unlocked`,
+              unlockedAt: sql`excluded.unlocked_at`,
+            },
+          });
+      }
+    }
+
     await db
       .update(userGames)
       .set({ achievementsUnlocked: unlockedCount, librarySyncedAt: new Date() })
