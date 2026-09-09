@@ -621,7 +621,7 @@
     .filters-side {
       display: block;
       position: sticky;
-      top: 1.5rem;
+      top: calc(var(--header-h, 3.875rem) + 1.25rem);
     }
     .filters-toggle {
       display: none;

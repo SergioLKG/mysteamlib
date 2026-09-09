@@ -32,7 +32,7 @@
   } = $props();
 </script>
 
-<div class="filters-panel" aria-label="Filtros y ordenación">
+<div class="filters-panel" role="group" aria-label="Filtros y ordenación">
   <div class="actions">
     <div class="field grow">
       <label for={`${idPrefix}-search`} class="sr-only">Buscar por nombre</label>
