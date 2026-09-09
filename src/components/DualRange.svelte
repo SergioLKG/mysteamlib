@@ -8,7 +8,7 @@
     step?: number;
     loLabel?: string;
     hiLabel?: string;
-    onchange?: (lo: number, hi: number) => void;
+    oninput?: (lo: number, hi: number) => void;
   }
 
   let {
@@ -20,15 +20,15 @@
     step = 1,
     loLabel = '',
     hiLabel = '',
-    onchange = () => {},
+    oninput = () => {},
   }: Props = $props();
 
   function setLo(e: Event): void {
-    onchange(Number((e.currentTarget as HTMLInputElement).value), hi);
+    oninput(Number((e.currentTarget as HTMLInputElement).value), hi);
   }
 
   function setHi(e: Event): void {
-    onchange(lo, Number((e.currentTarget as HTMLInputElement).value));
+    oninput(lo, Number((e.currentTarget as HTMLInputElement).value));
   }
 
   const span = $derived(Math.max(1, max - min));
@@ -60,7 +60,7 @@
     {step}
     value={lo}
     aria-label={loLabel || `${label}, mínimo`}
-    onchange={setLo}
+    oninput={setLo}
   />
   <input
     class="range range-hi"
@@ -70,7 +70,7 @@
     {step}
     value={hi}
     aria-label={hiLabel || `${label}, máximo`}
-    onchange={setHi}
+    oninput={setHi}
   />
 </div>
 
@@ -127,9 +127,11 @@
 
   .range {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    height: 100%;
+    height: 20px;
     margin: 0;
     -webkit-appearance: none;
     appearance: none;
@@ -143,17 +145,27 @@
     z-index: 3;
   }
 
+  .range::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    height: 6px;
+    background: transparent;
+  }
   .range::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     pointer-events: auto;
     width: 16px;
     height: 16px;
+    margin-top: -5px;
     border-radius: 50%;
     background: #eef1ff;
     border: 3px solid var(--accent, #7c8dff);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     cursor: grab;
+  }
+  .range::-moz-range-track {
+    height: 6px;
+    background: transparent;
   }
   .range::-moz-range-thumb {
     pointer-events: auto;
