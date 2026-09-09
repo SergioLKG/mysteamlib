@@ -13,8 +13,12 @@ function baseUrl(): string {
     : 'http://localhost:4321';
 }
 
-export const GET: APIRoute = ({ redirect }) => {
+const ALLOWED_NEXT = ['/dashboard', '/platino'];
+
+export const GET: APIRoute = ({ request, redirect }) => {
   const realm = baseUrl();
-  const returnTo = `${realm}/api/auth/callback`;
-  return redirect(buildLoginUrl({ realm, returnTo }));
+  const requestedNext = new URL(request.url).searchParams.get('next');
+  const next = ALLOWED_NEXT.includes(requestedNext ?? '') ? requestedNext : null;
+  const callback = `${realm}/api/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`;
+  return redirect(buildLoginUrl({ realm, returnTo: callback }));
 };

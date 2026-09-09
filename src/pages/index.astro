@@ -1,93 +1,275 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
 
 const user = Astro.locals.user;
 const title = 'mysteamlib';
+
+const tools = [
+  {
+    href: user ? '/platino' : '/api/auth/login?next=/platino',
+    title: 'Mi próximo platino',
+    desc: 'Tu lista de juegos con logros pendientes, ordenada por lo cerca que estás del 100&nbsp;%. Pule con filtros y decide cuál toca ahora.',
+    locked: !user,
+  },
+  {
+    href: user ? '/dashboard' : '/api/auth/login?next=/dashboard',
+    title: 'Mi dashboard',
+    desc: 'Tu resumen de juego: perfil, logros desbloqueados, platinados y horas, con acceso a todas las herramientas.',
+    locked: !user,
+  },
+];
 ---
 
 <BaseLayout {title}>
-  <header class="site-header">
-    <a class="brand" href="/">mysteamlib</a>
-    {user && (
-      <nav>
-        <a href="/dashboard">Mi Dashboard</a>
-        <a href="/platino">Mi próximo platino</a>
-        <form method="POST" action="/api/auth/logout">
-          <button type="submit">Cerrar sesión</button>
-        </form>
-      </nav>
-    )}
-  </header>
+  <SiteHeader {user} page="home" />
 
-  <main class="hero" id="main-content">
-    <h1>¿Qué me platino ahora?</h1>
-    <p class="tagline">
-      Revisa tu biblioteca de Steam, sigue tu progreso y descubre el título que
-      te queda más cerca de conseguir el 100&nbsp;%.
-    </p>
+  <main id="main-content" class="page">
+    <section class="hero">
+      <img class="hero-logo" src="/logo.svg" alt="" width="88" height="88" />
+      <h1>mysteamlib</h1>
+      <p class="lede">
+        Revisa tu biblioteca de Steam, sigue tu progreso y descubre el título que te
+        queda más cerca del 100&nbsp;% — <strong>¿qué me platino ahora?</strong>
+      </p>
 
-    {user ? (
-      <div>
-        <a class="cta" href="/dashboard">Ir a mi biblioteca</a>
+      <div class="cta-row">
+        {user ? (
+          <a class="cta" href="/dashboard">Ir a mi dashboard</a>
+        ) : (
+          <a class="steam-sign-in" href="/api/auth/login" title="Iniciar sesión con Steam">
+            <img
+              src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png"
+              alt="Sign in through Steam"
+              width="180"
+              height="35"
+            />
+          </a>
+        )}
       </div>
-    ) : (
-      <a class="steam-sign-in" href="/api/auth/login">
-        <img
-          src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png"
-          alt="Sign in through Steam"
-          width="180"
-          height="35"
-        />
-      </a>
-    )}
 
-    <p class="disclaimer">
-      mysteamlib no está afiliado a Valve Corporation ni a Steam. Los tiempos
-      de juego y datos provienen de tu perfil público de Steam y se muestran
-      “tal cual”. Inicia sesión solo con tu SteamID mediante OpenID; nunca
-      pedimos tu contraseña.
-    </p>
+      <p class="disclaimer">
+        mysteamlib no está afiliado a Valve Corporation ni a Steam. Los datos provienen de
+        tu perfil público de Steam y se muestran «tal cual». Inicia sesión solo con tu
+        SteamID mediante OpenID; nunca pedimos tu contraseña.
+      </p>
+    </section>
+
+    <section class="tools" aria-label="Productos y herramientas">
+      <h2>Productos y herramientas</h2>
+      <div class="grid">
+        {tools.map((t) => (
+          <a class="card tool" href={t.href}>
+            <div>
+              <h3>
+                {t.locked && (
+                  <svg
+                    class="lock"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                )}
+                {t.title}
+              </h3>
+              <p>{t.desc}</p>
+            </div>
+            <span class="go" aria-hidden="true">→</span>
+          </a>
+        ))}
+      </div>
+    </section>
   </main>
 </BaseLayout>
 
-<style>
-  .site-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
+<style is:global>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0e17;
+    --surface: #111724;
+    --surface-2: #141b2b;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: rgba(148, 163, 184, 0.16);
+    --accent: #7c8dff;
+    --accent-2: #b06ab3;
   }
-  .brand {
-    font-weight: 700;
-    text-decoration: none;
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(124, 141, 255, 0.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(176, 106, 179, 0.12), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  a {
     color: inherit;
   }
-  nav {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+</style>
+
+<style>
+  .page {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+    display: grid;
+    gap: 3.5rem;
   }
+
   .hero {
-    max-width: 34rem;
-    margin: 4rem auto;
+    margin-top: 3rem;
     text-align: center;
-    padding: 0 1.5rem;
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
   }
-  .tagline {
+  .hero-logo {
+    width: 88px;
+    height: 88px;
+    border-radius: 24px;
+    box-shadow:
+      0 18px 50px rgba(124, 141, 255, 0.22),
+      0 6px 18px rgba(176, 106, 179, 0.18);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.4rem, 7vw, 4rem);
+    letter-spacing: -0.03em;
+    font-weight: 800;
+    background: linear-gradient(90deg, #a5b4fc, #e0a3e3);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-wrap: balance;
+  }
+  .lede {
+    max-width: 36rem;
+    margin: 0;
     color: var(--muted, #6b7280);
+    font-size: 1.08rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+  .lede strong {
+    color: var(--text, #f1f5f9);
+  }
+
+  .cta-row {
+    margin-top: 0.75rem;
   }
   .cta {
     display: inline-block;
-    padding: 0.75rem 1.5rem;
-    background: #1b2838;
-    color: #fff;
-    border-radius: 4px;
+    padding: 0.8rem 2rem;
+    background: linear-gradient(135deg, #7c8dff, #b06ab3);
+    color: #0a0e17;
+    border-radius: 999px;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
+  .cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(124, 141, 255, 0.35);
+  }
+  .cta:focus-visible,
+  .steam-sign-in:focus-visible,
+  .tool:focus-visible {
+    outline: 2px solid var(--accent, #7c8dff);
+    outline-offset: 3px;
+  }
+  .steam-sign-in {
+    display: inline-block;
+    line-height: 0;
+    border-radius: 4px;
+  }
+  .steam-sign-in img {
+    display: block;
+  }
+
   .disclaimer {
-    margin-top: 3rem;
-    font-size: 0.8rem;
+    max-width: 42rem;
+    margin: 0;
+    font-size: 0.78rem;
     color: var(--muted, #6b7280);
+    line-height: 1.5;
+  }
+
+  .tools h2 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--muted, #6b7280);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--surface, #111724);
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.16));
+    border-radius: 16px;
+  }
+  .tool {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.2rem 1.3rem;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .tool:hover {
+    border-color: rgba(124, 141, 255, 0.45);
+    background: var(--surface-2, #141b2b);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+  }
+  .tool h3 {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .lock {
+    color: var(--accent, #7c8dff);
+    flex: none;
+  }
+  .tool p {
+    margin: 0;
+    color: var(--muted, #94a3b8);
+    font-size: 0.87rem;
+    line-height: 1.5;
+    max-width: 30rem;
+  }
+  .go {
+    font-size: 1.3rem;
+    color: var(--accent, #7c8dff);
+    flex: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta,
+    .tool {
+      transition: none;
+    }
   }
 </style>

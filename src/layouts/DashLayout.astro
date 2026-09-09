@@ -1,13 +1,19 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+
+interface SessionUser {
+  userId: string;
+  steamId: string;
+}
 
 interface Props {
   title: string;
   page: 'dashboard' | 'platino';
-  steamId: string;
+  user: SessionUser;
 }
 
-const { title, page, steamId } = Astro.props;
+const { title, page, user } = Astro.props;
 ---
 
 <BaseLayout {title}>
@@ -23,6 +29,7 @@ const { title, page, steamId } = Astro.props;
       --accent: #7c8dff;
       --accent-2: #b06ab3;
       --radius: 14px;
+      --header-h: 3.875rem;
     }
     body {
       margin: 0;
@@ -44,72 +51,7 @@ const { title, page, steamId } = Astro.props;
     }
   </style>
 
-  <header class="site-header">
-    <a class="brand" href="/">mysteamlib</a>
-    <nav aria-label="Principal">
-      <a href="/dashboard" aria-current={page === 'dashboard' ? 'page' : undefined}>Mi Dashboard</a>
-      <a href="/platino" aria-current={page === 'platino' ? 'page' : undefined}>Mi próximo platino</a>
-      <span class="who">{steamId}</span>
-      <form method="POST" action="/api/auth/logout">
-        <button type="submit" class="ghost">Cerrar sesión</button>
-      </form>
-    </nav>
-  </header>
+  <SiteHeader {user} {page} />
 
   <slot />
 </BaseLayout>
-
-<style>
-  .site-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .brand {
-    font-weight: 800;
-    font-size: 1.05rem;
-    text-decoration: none;
-    color: inherit;
-    letter-spacing: -0.01em;
-  }
-  nav {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    font-size: 0.9rem;
-    flex-wrap: wrap;
-  }
-  nav a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 0.15s ease;
-  }
-  nav a:hover {
-    color: var(--text);
-  }
-  nav a[aria-current='page'] {
-    color: var(--text);
-    font-weight: 600;
-  }
-  .who {
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .ghost {
-    font: inherit;
-    color: var(--muted);
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.35rem 0.75rem;
-    cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-  .ghost:hover {
-    color: var(--text);
-    border-color: var(--border);
-  }
-</style>
