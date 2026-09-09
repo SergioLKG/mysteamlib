@@ -507,15 +507,27 @@
           </div>
 
           <div class="body">
-            <a
-              class="store-link name-link"
-              href={`https://store.steampowered.com/app/${c.appid}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`Ver ${c.name} en la tienda de Steam`}
-            >
-              <h3 class="name">{c.name}</h3>
-            </a>
+            <div class="title-row">
+              <a
+                class="store-link name-link"
+                href={`https://store.steampowered.com/app/${c.appid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Ver ${c.name} en la tienda de Steam`}
+              >
+                <h3 class="name">{c.name}</h3>
+              </a>
+              <a
+                class="play"
+                href={`steam://run/${c.appid}`}
+                title={`Abrir ${c.name} en Steam`}
+                aria-label={`Abrir ${c.name} en Steam`}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </a>
+            </div>
             <p class="meta">
               {genresOf(c)}
               {#if yearOf(c)}· {yearOf(c)}{/if}
@@ -1084,10 +1096,12 @@
     font-weight: 800;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #0b1020;
-    background: linear-gradient(135deg, #e6e9f8, #f8f9ff 55%, #c3c8de);
-    border: 1px solid rgba(241, 243, 251, 0.75);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    color: #0a1024;
+    background: linear-gradient(135deg, #d9e4ff, #f2f6ff 55%, #aec0ff);
+    border: 1px solid rgba(198, 216, 255, 0.85);
+    box-shadow:
+      0 0 0 1px rgba(140, 163, 255, 0.35),
+      0 2px 14px rgba(108, 138, 255, 0.65);
   }
 
   .body {
@@ -1111,6 +1125,46 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .title-row .name-link {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .play {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    color: #052e16;
+    background: linear-gradient(145deg, #4ade80, #22c55e);
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  }
+  .play:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.5);
+  }
+  .play:active {
+    transform: translateY(0) scale(0.96);
+  }
+  .play svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    margin-left: 2px;
+  }
+  .play:focus-visible {
+    outline: 2px solid #86efac;
+    outline-offset: 2px;
   }
 
   .bar-wrap {
@@ -1157,19 +1211,28 @@
   }
 
   .card.platinum {
-    border-color: color-mix(in srgb, #cdd0e4 55%, transparent);
+    border-color: color-mix(in srgb, #8fa9ff 68%, transparent);
     background: linear-gradient(
       160deg,
-      color-mix(in srgb, #cdd0e4 11%, var(--surface, #0f1420)) 0%,
-      color-mix(in srgb, #cdd0e4 3%, var(--surface, #0f1420)) 55%,
+      color-mix(in srgb, #9db2ff 16%, var(--surface, #0f1420)) 0%,
+      color-mix(in srgb, #8497f5 6%, var(--surface, #0f1420)) 55%,
       var(--surface, #0f1420) 100%
     );
+    box-shadow:
+      0 0 0 1px rgba(140, 163, 255, 0.16),
+      0 8px 26px rgba(90, 115, 240, 0.22);
   }
   .card.platinum:hover {
-    border-color: rgba(205, 208, 228, 0.75);
+    border-color: rgba(168, 185, 255, 0.85);
+    box-shadow:
+      0 0 0 1px rgba(163, 180, 255, 0.35),
+      0 12px 34px rgba(90, 115, 240, 0.34);
   }
   .card.platinum .bar-fill {
-    background: linear-gradient(90deg, #8b92b3, #b9bed6);
+    background: linear-gradient(90deg, #6f86ff, #a8bcff);
+  }
+  .card.platinum .bar-text {
+    text-shadow: 0 1px 2px rgba(10, 16, 36, 0.6);
   }
 
   .footnote {
@@ -1192,7 +1255,8 @@
     .link-btn,
     .dir-toggle,
     .bar,
-    .bar-text {
+    .bar-text,
+    .play {
       transition: none;
     }
     .pulse,

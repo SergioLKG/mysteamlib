@@ -116,7 +116,7 @@
       hi={filters.achievementsMax}
       loLabel="Logros restantes, mínimo"
       hiLabel="Logros restantes, máximo"
-      onchange={(lo, hi) => {
+      oninput={(lo, hi) => {
         filters.achievementsMin = lo;
         filters.achievementsMax = hi;
       }}
@@ -133,7 +133,7 @@
       hi={filters.timeMax}
       loLabel="Tiempo estimado, mínimo de horas"
       hiLabel="Tiempo estimado, máximo de horas"
-      onchange={(lo, hi) => {
+      oninput={(lo, hi) => {
         filters.timeMin = lo;
         filters.timeMax = hi;
       }}
