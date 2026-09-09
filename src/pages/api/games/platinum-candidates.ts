@@ -1,19 +1,12 @@
 import type { APIRoute } from 'astro';
 import { getLibraryGenres, getPlatinumCandidates } from '../../../lib/db/queries/library';
-import type {
-  PlatinumFilters,
-  PlatinumSort,
-  ProgressState,
-} from '../../../lib/db/queries/library';
 
 export const prerender = false;
 
-function parseIntOrUndefined(raw: string | null): number | undefined {
-  if (raw === null || raw.trim() === '') return undefined;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : undefined;
-}
-
+// Returns the FULL candidate set for the signed-in user (one call per visit;
+// filtering/sorting happen client-side in LibraryExplorer). Only the base
+// semantics are applied here (has achievements + total > 0). Completed (100%)
+// games ARE included so the client can decide locally via `showCompleted`.
 export const GET: APIRoute = async (context) => {
   const user = context.locals.user;
   if (!user) {
@@ -23,60 +16,25 @@ export const GET: APIRoute = async (context) => {
     });
   }
 
-  const sp = context.url.searchParams;
-  const stateRaw = sp.get('state');
-  const state: ProgressState =
-    stateRaw === 'unplayed' || stateRaw === 'started' || stateRaw === 'completed'
-      ? stateRaw
-      : 'all';
-
-  const filters: PlatinumFilters = {
-    state,
-    showCompleted: (sp.get('showCompleted') ?? '') === 'true',
-    achievementsMin: parseIntOrUndefined(sp.get('achievementsMin')),
-    achievementsMax: parseIntOrUndefined(sp.get('achievementsMax')),
-    timeMinHours: parseIntOrUndefined(sp.get('timeMinHours')),
-    timeMaxHours: parseIntOrUndefined(sp.get('timeMaxHours')),
-    includeNoTime: (sp.get('includeNoTime') ?? 'true') !== 'false',
-    genre: sp.get('genre') || undefined,
-    search: sp.get('search') || undefined,
-  };
-
-  const sortKeyRaw = sp.get('sort');
-  const sortKey: PlatinumSort['key'] =
-    sortKeyRaw === 'remaining' ||
-    sortKeyRaw === 'time' ||
-    sortKeyRaw === 'rarity'
-      ? sortKeyRaw
-      : 'difficulty';
-  const sort: PlatinumSort = {
-    key: sortKey,
-    direction: sp.get('direction') === 'desc' ? 'desc' : 'asc',
-  };
-
   try {
-    const [candidates, availableGenres] = await Promise.all([
-      getPlatinumCandidates(user.userId, filters, sort),
+    const [games, availableGenres] = await Promise.all([
+      getPlatinumCandidates(user.userId, { showCompleted: true }, { key: 'difficulty', direction: 'asc' }),
       getLibraryGenres(user.userId),
     ]);
 
     return new Response(
       JSON.stringify({
-        candidates,
-        meta: {
-          total: candidates.length,
-          partialEstimates: candidates.filter((c) => !c.hasTimeEstimate).length,
-          availableGenres,
-        },
+        games,
+        meta: { availableGenres },
       }),
       {
         headers: {
           'Content-Type': 'application/json',
-          // Intentional: per-user payload, must not be cached at the CDN/edge
-          // (a shared cache could leak another user's library). Caching is
-          // handled client-side in LibraryExplorer (debounced + single-flight
-          // + 60s TTL per query string).
-          'Cache-Control': 'no-store',
+          // Safe to cache in the browser (Vary: Cookie), NOT at the CDN: the
+          // payload is per-user. max-age=300: data only changes on the daily
+          // cron, and the client can force-refresh with "Actualizar datos".
+          'Cache-Control': 'private, max-age=300',
+          Vary: 'Cookie',
         },
       },
     );

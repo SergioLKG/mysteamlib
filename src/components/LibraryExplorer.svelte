@@ -19,8 +19,8 @@
   }
 
   interface ApiResponse {
-    candidates: Candidate[];
-    meta: { total: number; partialEstimates: number; availableGenres: string[] };
+    games: Candidate[];
+    meta: { availableGenres: string[] };
     error?: string;
   }
 
@@ -54,27 +54,16 @@
     direction: 'asc',
   });
 
-  let candidates = $state.raw<Candidate[]>([]);
+  // Full per-user dataset, fetched ONCE on mount. Filters and sorting run
+  // locally in a pure $derived below, so interactivity never touches the
+  // server: instant feedback, zero extra requests. Data only changes on the
+  // daily cron, so staleness within the session is a non-issue.
+  let games = $state.raw<Candidate[]>([]);
   let availableGenres = $state.raw<string[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let total = $state(0);
-  let partialEstimates = $state(0);
-
-  // Unified debounce for every filter change (search + selects + toggles), so
-  // rapid interactions collapse into a single request per burst.
-  let reloadTimer: ReturnType<typeof setTimeout> | undefined;
-  // In-flight request: cancel it when a newer filter state supersedes it, so we
-  // never apply an out-of-order response nor waste a round-trip.
+  // Handle for the in-flight fetch (initial load + manual refresh).
   let controller: AbortController | undefined;
-  // Last request we actually sent; identical re-requests are skipped (e.g. the
-  // user toggles a filter back to the state that's already on screen).
-  let lastRequestKey = '';
-  // Small TTL cache keyed by the query string. Data only changes on the daily
-  // cron, so re-visiting a recent filter set can be served instantly without
-  // touching the server.
-  const cache = new Map<string, { data: ApiResponse; at: number }>();
-  const CACHE_TTL_MS = 60_000;
 
   const hasActiveFilters = $derived(
     filters.search !== '' ||
@@ -87,6 +76,13 @@
       !filters.includeNoTime ||
       filters.genre !== '',
   );
+
+  // Reactive view over the full dataset. Recomputes instantly on every filter
+  // change and replicates the server-side semantics (state, exact genre match,
+  // case-insensitive name search, nulls always last, name as tiebreak).
+  const view = $derived.by(() => buildView(games, filters));
+  const total = $derived(view.length);
+  const partialEstimates = $derived(view.filter((c) => !c.hasTimeEstimate).length);
 
   function buildParams(): URLSearchParams {
     const params = new URLSearchParams();
@@ -110,43 +106,40 @@
     history.replaceState(null, '', next);
   }
 
-  function applyData(data: ApiResponse): void {
-    candidates = data.candidates;
-    availableGenres = data.meta.availableGenres;
-    total = data.meta.total;
-    partialEstimates = data.meta.partialEstimates;
-  }
+  // Keep the URL in sync with the current filters (pure client-side; no
+  // refetch). Users can share/copy the exact filtered view.
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    // touch every filter field so the effect reacts to any change
+    void filters.search;
+    void filters.progress;
+    void filters.showCompleted;
+    void filters.achievementsMin;
+    void filters.achievementsMax;
+    void filters.timeMin;
+    void filters.timeMax;
+    void filters.includeNoTime;
+    void filters.genre;
+    void filters.sort;
+    void filters.direction;
+    syncUrl();
+  });
 
   async function load(): Promise<void> {
-    const key = requestKey();
-    if (key === lastRequestKey) return;
-    lastRequestKey = key;
-
-    const hit = cache.get(key);
-    if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
-      applyData(hit.data);
-      return;
-    }
-
-    loading = candidates.length === 0;
     error = null;
+    loading = true;
     controller?.abort();
     controller = new AbortController();
-    const myController = controller;
     try {
-      const res = await fetch(`/api/games/platinum-candidates?${key}`, {
-        signal: controller.signal,
-      });
+      const res = await fetch('/api/games/platinum-candidates', { signal: controller.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as ApiResponse;
-      if (!data.candidates) {
+      if (!data.games) {
         error = data.error ?? 'Respuesta inesperada';
         return;
       }
-      // A newer filter state started a request meanwhile: drop this one.
-      if (controller !== myController) return;
-      cache.set(key, { data, at: Date.now() });
-      applyData(data);
+      games = data.games;
+      availableGenres = data.meta.availableGenres;
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       error = (e as Error).message;
@@ -155,32 +148,11 @@
     }
   }
 
-  function requestKey(): string {
-    return buildParams().toString();
-  }
-
-  function scheduleReload(delay = 220): void {
-    clearTimeout(reloadTimer);
-    reloadTimer = setTimeout(() => void reload(), delay);
-  }
-
-  function reload(): void {
-    const key = requestKey();
-    if (key === lastRequestKey && candidates.length > 0 && !error) return;
-    syncUrl();
+  function refresh(): void {
     void load();
   }
 
-  function onSearchInput(): void {
-    scheduleReload(320);
-  }
-
-  function onFilterChange(): void {
-    scheduleReload();
-  }
-
   function resetFilters(): void {
-    clearTimeout(reloadTimer);
     filters = {
       search: '',
       progress: 'all',
@@ -194,8 +166,63 @@
       sort: filters.sort,
       direction: filters.direction,
     };
-    syncUrl();
-    void load();
+  }
+
+  function cmpName(a: Candidate, b: Candidate): number {
+    return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+  }
+
+  function cmpNullsLast(a: number | null, b: number | null, asc: boolean): number {
+    if (a === null && b === null) return 0;
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return asc ? a - b : b - a;
+  }
+
+  function buildView(all: Candidate[], f: Filters): Candidate[] {
+    const q = f.search.trim().toLowerCase();
+    const timeMin = f.timeMin === '' ? undefined : Number(f.timeMin);
+    const timeMax = f.timeMax === '' ? undefined : Number(f.timeMax);
+    const remMin = f.achievementsMin === '' ? undefined : Number(f.achievementsMin);
+    const remMax = f.achievementsMax === '' ? undefined : Number(f.achievementsMax);
+    const showCompleted = f.showCompleted || f.progress === 'completed';
+
+    const list: Candidate[] = [];
+    for (const c of all) {
+      const rem = c.achievementsRemaining;
+      if (!showCompleted && rem === 0) continue;
+      if (f.progress === 'unplayed' && c.playtimeMinutes !== 0) continue;
+      if (f.progress === 'started' && !(c.achievementsUnlocked > 0 && rem > 0)) continue;
+      if (f.progress === 'completed' && rem !== 0) continue;
+      if (!f.includeNoTime && !c.hasTimeEstimate) continue;
+      if (f.genre && !(c.genres?.includes(f.genre))) continue;
+      if (q && !c.name.toLowerCase().includes(q)) continue;
+      if (remMin !== undefined && rem < remMin) continue;
+      if (remMax !== undefined && rem > remMax) continue;
+      if (timeMin !== undefined && (c.estimatedTimeToPlatinum === null || c.estimatedTimeToPlatinum < timeMin)) continue;
+      if (timeMax !== undefined && (c.estimatedTimeToPlatinum === null || c.estimatedTimeToPlatinum > timeMax)) continue;
+      list.push(c);
+    }
+
+    const asc = f.direction !== 'desc';
+    const valueFn = (c: Candidate): number | null => {
+      switch (f.sort) {
+        case 'remaining':
+          return c.achievementsRemaining;
+        case 'time':
+          return c.estimatedTimeToPlatinum;
+        case 'rarity':
+          return c.avgGlobalRarityRemaining;
+        case 'difficulty':
+        default:
+          return c.difficultyScore;
+      }
+    };
+    list.sort((a, b) => {
+      const by = cmpNullsLast(valueFn(a), valueFn(b), asc);
+      return by !== 0 ? by : cmpName(a, b);
+    });
+    return list;
   }
 
   function initFromUrl(): void {
@@ -223,6 +250,7 @@
     if (timeMax) next.timeMax = timeMax;
     const genre = sp.get('genre');
     if (genre) next.genre = genre;
+    // Set with an explicit write so the URL-sync effect re-runs afterwards.
     filters = next;
   }
 
@@ -232,7 +260,6 @@
   });
 
   onDestroy(() => {
-    clearTimeout(reloadTimer);
     controller?.abort();
   });
 
@@ -291,19 +318,12 @@
           autocomplete="off"
           spellcheck={false}
           bind:value={filters.search}
-          oninput={onSearchInput}
-          onkeydown={(e) => {
-            if (e.key === 'Enter') {
-              clearTimeout(reloadTimer);
-              reload();
-            }
-          }}
         />
       </div>
 
       <div class="field">
         <label for="fx-progress">Progreso</label>
-        <select id="fx-progress" name="state" bind:value={filters.progress} onchange={onFilterChange}>
+        <select id="fx-progress" name="state" bind:value={filters.progress}>
           <option value="all">Todos</option>
           <option value="unplayed">Sin jugar</option>
           <option value="started">Empezados</option>
@@ -313,7 +333,7 @@
 
       <div class="field">
         <label for="fx-genre">Género</label>
-        <select id="fx-genre" name="genre" bind:value={filters.genre} onchange={onFilterChange}>
+        <select id="fx-genre" name="genre" bind:value={filters.genre}>
           <option value="">Todos</option>
           {#each availableGenres as g (g)}
             <option value={g}>{g}</option>
@@ -323,7 +343,7 @@
 
       <div class="field">
         <label for="fx-sort">Ordenar</label>
-        <select id="fx-sort" name="sort" bind:value={filters.sort} onchange={onFilterChange}>
+        <select id="fx-sort" name="sort" bind:value={filters.sort}>
           <option value="difficulty">Recomendado</option>
           <option value="remaining">Logros restantes</option>
           <option value="time">Tiempo estimado</option>
@@ -333,7 +353,7 @@
 
       <div class="field">
         <label for="fx-direction">Dirección</label>
-        <select id="fx-direction" name="direction" bind:value={filters.direction} onchange={onFilterChange}>
+        <select id="fx-direction" name="direction" bind:value={filters.direction}>
           <option value="asc">Asc</option>
           <option value="desc">Desc</option>
         </select>
@@ -350,7 +370,6 @@
           min="0"
           autocomplete="off"
           bind:value={filters.achievementsMin}
-          onchange={onFilterChange}
         />
       </div>
       <div class="field small">
@@ -362,7 +381,6 @@
           min="0"
           autocomplete="off"
           bind:value={filters.achievementsMax}
-          onchange={onFilterChange}
         />
       </div>
       <div class="field small">
@@ -375,7 +393,6 @@
           step="1"
           autocomplete="off"
           bind:value={filters.timeMin}
-          onchange={onFilterChange}
         />
       </div>
       <div class="field small">
@@ -388,16 +405,15 @@
           step="1"
           autocomplete="off"
           bind:value={filters.timeMax}
-          onchange={onFilterChange}
         />
       </div>
 
       <label class="check" for="fx-notime">
-        <input id="fx-notime" type="checkbox" bind:checked={filters.includeNoTime} onchange={onFilterChange} />
+        <input id="fx-notime" type="checkbox" bind:checked={filters.includeNoTime} />
         <span>Incluir juegos sin dato de tiempo</span>
       </label>
       <label class="check" for="fx-completed">
-        <input id="fx-completed" type="checkbox" bind:checked={filters.showCompleted} onchange={onFilterChange} />
+        <input id="fx-completed" type="checkbox" bind:checked={filters.showCompleted} />
         <span>Ver platinados (100%)</span>
       </label>
       {#if hasActiveFilters}
@@ -406,8 +422,8 @@
     </div>
   </header>
 
-  <div class="summary" aria-live="polite">
-    {#if loading}
+  <div class="summary" aria-live="polite" aria-busy={loading}>
+    {#if loading && games.length === 0}
       <span class="chip pulse">Cargando…</span>
     {/if}
     {#if syncing}
@@ -421,6 +437,9 @@
       {#if partialEstimates > 0}
         · {partialEstimates} sin estimación de tiempo
       {/if}
+      <button class="link-btn refresh" type="button" onclick={refresh} disabled={loading}>
+        {loading ? 'Actualizando…' : 'Actualizar datos'}
+      </button>
     </p>
     {#if error}
       <p class="error" role="alert">
@@ -429,7 +448,18 @@
     {/if}
   </div>
 
-  {#if !loading && candidates.length === 0 && !error}
+  {#if loading && games.length === 0 && !error}
+    <div class="skeleton" role="status" aria-label="Cargando mi lista">
+      {#each Array(7) as _, i (i)}
+        <div class="skeleton-card" aria-hidden="true">
+          <span class="sk sk-cover"></span>
+          <span class="sk sk-line sk-name"></span>
+          <span class="sk sk-line sk-meta"></span>
+          <span class="sk sk-rail"></span>
+        </div>
+      {/each}
+    </div>
+  {:else if view.length === 0 && !error}
     <div class="empty">
       <p>No encuentro juegos con estos filtros.</p>
       {#if hasActiveFilters}
@@ -437,8 +467,8 @@
       {/if}
     </div>
   {:else}
-    <ul class="grid">
-      {#each candidates as c (c.appid)}
+    <ul class="grid visible">
+      {#each view as c (c.appid)}
         <li class="card">
           <div class="cover">
             {#if c.headerImageUrl}
@@ -657,6 +687,68 @@
     }
   }
 
+  .count .refresh {
+    margin-left: 0.5rem;
+  }
+  .count .refresh:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .skeleton {
+    display: grid;
+    gap: 0.7rem;
+  }
+  .skeleton-card {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.1));
+    background: color-mix(in srgb, var(--surface, #0f1420) 75%, #000);
+  }
+  .sk {
+    display: block;
+    border-radius: 8px;
+    background: linear-gradient(
+      90deg,
+      rgba(148, 163, 184, 0.08) 25%,
+      rgba(148, 163, 184, 0.2) 50%,
+      rgba(148, 163, 184, 0.08) 75%
+    );
+    background-size: 200% 100%;
+    animation: shim 1.4s ease-in-out infinite;
+  }
+  .sk-cover {
+    width: 92px;
+    height: 42px;
+  }
+  .sk-name {
+    height: 14px;
+    width: 55%;
+    margin-bottom: 0.5rem;
+  }
+  .sk-meta {
+    height: 11px;
+    width: 35%;
+  }
+  .sk-rail {
+    grid-column: 1 / -1;
+    height: 7px;
+    border-radius: 999px;
+    width: 100%;
+  }
+  @keyframes shim {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
   .empty {
     padding: 2.5rem 1rem;
     text-align: center;
@@ -671,6 +763,19 @@
     padding: 0;
     display: grid;
     gap: 0.7rem;
+  }
+  .grid.visible {
+    animation: rise 0.25s ease;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   .card {
@@ -838,7 +943,11 @@
     select {
       transition: none;
     }
-    .pulse {
+    .pulse,
+    .sk {
+      animation: none;
+    }
+    .grid.visible {
       animation: none;
     }
   }
