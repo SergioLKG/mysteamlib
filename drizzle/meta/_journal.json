@@ -22,6 +22,13 @@
       "when": 1788522958272,
       "tag": "0002_motionless_unus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788955246580,
+      "tag": "0003_nice_zuras",
+      "breakpoints": true
     }
   ]
 }

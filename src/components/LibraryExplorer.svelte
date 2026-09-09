@@ -351,7 +351,7 @@
     {/if}
     {#if syncing}
       <p class="notice">
-        Tu biblioteca aún se está sincronizando por primera vez. Algunos juegos
+        Mi biblioteca aún se está sincronizando por primera vez. Algunos juegos
         pueden aparecer con datos incompletos hasta que termine.
       </p>
     {/if}
@@ -370,7 +370,7 @@
 
   {#if !loading && candidates.length === 0 && !error}
     <div class="empty">
-      <p>No hay juegos que encajen con estos filtros.</p>
+      <p>No encuentro juegos con estos filtros.</p>
       {#if hasActiveFilters}
         <button class="link-btn" type="button" onclick={resetFilters}>Limpiar filtros</button>
       {/if}
@@ -408,7 +408,7 @@
               <dd>{c.achievementsRemaining}</dd>
             </div>
             <div>
-              <dt>Tiempo</dt>
+              <dt>Tiempo Estimado</dt>
               <dd class={c.hasTimeEstimate ? '' : 'muted'}>
                 {timeLabel(c)}
                 {#if !c.hasTimeEstimate}

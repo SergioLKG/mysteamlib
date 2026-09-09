@@ -10,7 +10,8 @@ const title = 'mysteamlib';
     <a class="brand" href="/">mysteamlib</a>
     {user && (
       <nav>
-        <a href="/dashboard">Dashboard</a>
+        <a href="/dashboard">Mi Dashboard</a>
+        <a href="/platino">Mi próximo platino</a>
         <form method="POST" action="/api/auth/logout">
           <button type="submit">Cerrar sesión</button>
         </form>
@@ -19,10 +20,10 @@ const title = 'mysteamlib';
   </header>
 
   <main class="hero" id="main-content">
-    <h1>“¿Qué juego me platinaste ahora?”</h1>
+    <h1>¿Qué me platino ahora?</h1>
     <p class="tagline">
-      Pasa por tu biblioteca de Steam, ve tu progreso y descubre qué títulos te
-      quedan más cerca de conseguir el 100&nbsp;%.
+      Revisa tu biblioteca de Steam, sigue tu progreso y descubre el título que
+      te queda más cerca de conseguir el 100&nbsp;%.
     </p>
 
     {user ? (
