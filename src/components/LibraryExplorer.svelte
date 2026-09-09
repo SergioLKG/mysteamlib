@@ -562,7 +562,7 @@
 
   .layout {
     display: grid;
-    gap: 1.25rem;
+    gap: 1.5rem;
     align-items: start;
   }
   .section {
@@ -616,7 +616,7 @@
 
   @media (min-width: 1024px) {
     .layout {
-      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-columns: 250px minmax(0, 1fr);
     }
     .filters-side {
       display: block;
@@ -865,6 +865,13 @@
     padding: 0;
     display: grid;
     gap: 0.7rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 1024px) {
+    .grid {
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    }
   }
 
   .card {

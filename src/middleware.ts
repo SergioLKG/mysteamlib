@@ -12,13 +12,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
     protectedPaths.some((p) => path === p || path.startsWith(`${p}/`)) ||
     protectedApiPrefixes.some((p) => path.startsWith(p));
 
-  if (!isProtected) {
-    return next();
-  }
-
   const session = getSession(context);
 
-  if (!session) {
+  // Populate the user for every request with a valid session (not just
+  // protected routes) so pages like the home can render the logged-in header.
+  if (session) {
+    context.locals.user = session;
+  }
+
+  if (isProtected && !session) {
     if (path.startsWith('/api/')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -30,6 +32,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(login.toString());
   }
 
-  context.locals.user = session;
   return next();
 });

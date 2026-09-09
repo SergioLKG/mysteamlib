@@ -152,10 +152,10 @@
   .filters-panel {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
+    gap: 0.6rem;
+    padding: 0.7rem 0.8rem;
     border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
-    border-radius: 14px;
+    border-radius: 12px;
     background: color-mix(in srgb, var(--surface, #0f1420) 88%, transparent);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   }
@@ -164,28 +164,28 @@
   .ranges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.625rem;
+    gap: 0.5rem;
     align-items: flex-end;
   }
   .ranges {
-    row-gap: 0.5rem;
+    row-gap: 0.4rem;
   }
 
   .field {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
   }
   .field.grow {
-    flex: 1 1 220px;
-    min-width: 220px;
+    flex: 1 1 100%;
+    min-width: 100%;
   }
   .field.small {
-    width: 92px;
+    width: 80px;
   }
 
   .field label {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -196,10 +196,11 @@
   input[type='number'],
   select {
     font: inherit;
+    font-size: 0.875rem;
     color: inherit;
-    padding: 0.5rem 0.625rem;
+    padding: 0.4rem 0.55rem;
     border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
-    border-radius: 10px;
+    border-radius: 9px;
     background: color-mix(in srgb, var(--surface, #0f1420) 60%, #000);
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
@@ -215,10 +216,10 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.875rem;
+    font-size: 0.82rem;
     color: var(--muted, #94a3b8);
     cursor: pointer;
-    padding-bottom: 0.45rem;
+    padding-bottom: 0.28rem;
   }
   .check input {
     accent-color: var(--accent, #7c8dff);
