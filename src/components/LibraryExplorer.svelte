@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import { onDestroy, onMount } from 'svelte';
+  import FiltersPanel from './FiltersPanel.svelte';
 
   interface Candidate {
     appid: number;
@@ -65,17 +67,53 @@
   // Handle for the in-flight fetch (initial load + manual refresh).
   let controller: AbortController | undefined;
 
-  const hasActiveFilters = $derived(
-    filters.search !== '' ||
-      filters.progress !== 'all' ||
-      filters.showCompleted ||
-      filters.achievementsMin !== '' ||
-      filters.achievementsMax !== '' ||
-      filters.timeMin !== '' ||
-      filters.timeMax !== '' ||
-      !filters.includeNoTime ||
-      filters.genre !== '',
+  const activeCount = $derived(
+    (filters.search !== '' ? 1 : 0) +
+      (filters.progress !== 'all' ? 1 : 0) +
+      (filters.showCompleted ? 1 : 0) +
+      (filters.achievementsMin !== '' ? 1 : 0) +
+      (filters.achievementsMax !== '' ? 1 : 0) +
+      (filters.timeMin !== '' ? 1 : 0) +
+      (filters.timeMax !== '' ? 1 : 0) +
+      (filters.includeNoTime ? 0 : 1) +
+      (filters.genre !== '' ? 1 : 0),
   );
+  const hasActiveFilters = $derived(activeCount > 0);
+
+  // Mobile filters open as an overlay (modal); desktop keeps the same panel
+  // in a sticky sidebar. Focus moves to the close button on open and returns
+  // to the toggle when closing (Esc / backdrop / close all supported).
+  let filterOpen = $state(false);
+  let filterToggleBtn: HTMLButtonElement | undefined;
+  let filterCloseBtn: HTMLButtonElement | undefined;
+
+  function openFilters(): void {
+    filterOpen = true;
+  }
+
+  function closeFilters(): void {
+    if (!filterOpen) return;
+    filterOpen = false;
+    filterToggleBtn?.focus();
+  }
+
+  function onWindowKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape') closeFilters();
+  }
+
+  function onModalBackdropClick(e: MouseEvent): void {
+    if (e.target === e.currentTarget) closeFilters();
+  }
+
+  function closeFiltersIfDesktop(): void {
+    if (window.innerWidth >= 1024) closeFilters();
+  }
+
+  $effect(() => {
+    if (filterOpen) {
+      void tick().then(() => filterCloseBtn?.focus());
+    }
+  });
 
   // Reactive view over the full dataset. Recomputes instantly on every filter
   // change and replicates the server-side semantics (state, exact genre match,
@@ -294,135 +332,41 @@
     if (score <= 60) return 'mid';
     return 'hard';
   }
-
-  function sortLabel(key: string): string {
-    return {
-      difficulty: 'Recomendado',
-      remaining: 'Logros restantes',
-      time: 'Tiempo estimado',
-      rarity: 'Rareza de logros', 
-    }[key] ?? key;
-  }
 </script>
 
 <section class="explorer">
-  <header class="toolbar" aria-label="Filtros y ordenación">
-    <div class="toolbar-actions">
-      <div class="field grow">
-        <label for="fx-search" class="sr-only">Buscar por nombre</label>
-        <input
-          id="fx-search"
-          type="search"
-          name="search"
-          placeholder="Buscar juego…"
-          autocomplete="off"
-          spellcheck={false}
-          bind:value={filters.search}
-        />
+  <div class="layout" inert={filterOpen}>
+    <aside class="filters-side">
+      <FiltersPanel
+        {filters}
+        {availableGenres}
+        activeCount={activeCount}
+        onreset={resetFilters}
+        idPrefix="side"
+      />
+    </aside>
+
+    <div class="section">
+      <div class="main-head">
+        <button
+          class="filters-toggle"
+          type="button"
+          bind:this={filterToggleBtn}
+          aria-expanded={filterOpen}
+          aria-controls="mobile-filters"
+          onclick={openFilters}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 6h16M7 12h10M10 18h4" />
+          </svg>
+          Filtros
+          {#if activeCount > 0}
+            <span class="count-badge">{activeCount}</span>
+          {/if}
+        </button>
       </div>
 
-      <div class="field">
-        <label for="fx-progress">Progreso</label>
-        <select id="fx-progress" name="state" bind:value={filters.progress}>
-          <option value="all">Todos</option>
-          <option value="unplayed">Sin jugar</option>
-          <option value="started">Empezados</option>
-          <option value="completed">Completados</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="fx-genre">Género</label>
-        <select id="fx-genre" name="genre" bind:value={filters.genre}>
-          <option value="">Todos</option>
-          {#each availableGenres as g (g)}
-            <option value={g}>{g}</option>
-          {/each}
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="fx-sort">Ordenar</label>
-        <select id="fx-sort" name="sort" bind:value={filters.sort}>
-          <option value="difficulty">Recomendado</option>
-          <option value="remaining">Logros restantes</option>
-          <option value="time">Tiempo estimado</option>
-          <option value="rarity">Rareza de logros</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="fx-direction">Dirección</label>
-        <select id="fx-direction" name="direction" bind:value={filters.direction}>
-          <option value="asc">Asc</option>
-          <option value="desc">Desc</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="toolbar-ranges">
-      <div class="field small">
-        <label for="fx-rem-min">Logros ≥</label>
-        <input
-          id="fx-rem-min"
-          type="number"
-          name="achievementsMin"
-          min="0"
-          autocomplete="off"
-          bind:value={filters.achievementsMin}
-        />
-      </div>
-      <div class="field small">
-        <label for="fx-rem-max">Logros ≤</label>
-        <input
-          id="fx-rem-max"
-          type="number"
-          name="achievementsMax"
-          min="0"
-          autocomplete="off"
-          bind:value={filters.achievementsMax}
-        />
-      </div>
-      <div class="field small">
-        <label for="fx-time-min">Horas ≥</label>
-        <input
-          id="fx-time-min"
-          type="number"
-          name="timeMinHours"
-          min="0"
-          step="1"
-          autocomplete="off"
-          bind:value={filters.timeMin}
-        />
-      </div>
-      <div class="field small">
-        <label for="fx-time-max">Horas ≤</label>
-        <input
-          id="fx-time-max"
-          type="number"
-          name="timeMaxHours"
-          min="0"
-          step="1"
-          autocomplete="off"
-          bind:value={filters.timeMax}
-        />
-      </div>
-
-      <label class="check" for="fx-notime">
-        <input id="fx-notime" type="checkbox" bind:checked={filters.includeNoTime} />
-        <span>Incluir juegos sin dato de tiempo</span>
-      </label>
-      <label class="check" for="fx-completed">
-        <input id="fx-completed" type="checkbox" bind:checked={filters.showCompleted} />
-        <span>Ver platinados (100%)</span>
-      </label>
-      {#if hasActiveFilters}
-        <button class="link-btn" type="button" onclick={resetFilters}>Limpiar filtros</button>
-      {/if}
-    </div>
-  </header>
-
-  <div class="summary" aria-live="polite" aria-busy={loading}>
+      <div class="summary" aria-live="polite" aria-busy={loading}>
     {#if loading && games.length === 0}
       <span class="chip pulse">Cargando…</span>
     {/if}
@@ -453,33 +397,74 @@
       {#each Array(7) as _, i (i)}
         <div class="skeleton-card" aria-hidden="true">
           <span class="sk sk-cover"></span>
-          <span class="sk sk-line sk-name"></span>
-          <span class="sk sk-line sk-meta"></span>
-          <span class="sk sk-rail"></span>
+          <span class="sk-block">
+            <span class="sk sk-line sk-name"></span>
+            <span class="sk sk-line sk-meta"></span>
+            <span class="sk sk-rail"></span>
+          </span>
+          <span class="sk sk-stats"></span>
         </div>
       {/each}
     </div>
   {:else if view.length === 0 && !error}
     <div class="empty">
-      <p>No encuentro juegos con estos filtros.</p>
+      <svg
+        class="empty-icon"
+        width="40"
+        height="40"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+        <path d="M4 22h16" />
+        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21 1.18.54 2.03 2.03 2.03 3.79" />
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+      </svg>
+      <p class="empty-title">Nada por aquí…</p>
+      <p class="empty-text">
+        Con estos filtros no encuentro ningún juego. Prueba a soltar un poco o
+        a limpiarlos.
+      </p>
       {#if hasActiveFilters}
         <button class="link-btn" type="button" onclick={resetFilters}>Limpiar filtros</button>
       {/if}
     </div>
   {:else}
-    <ul class="grid visible">
-      {#each view as c (c.appid)}
-        <li class="card">
-          <div class="cover">
+    <ul class="grid">
+      {#each view as c, i (c.appid)}
+        <li class="card" style:--i={Math.min(i, 7)}>
+          <a
+            class="cover store-link"
+            href={`https://store.steampowered.com/app/${c.appid}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${c.name} en Steam`}
+            title={`Ver ${c.name} en la tienda de Steam`}
+          >
             {#if c.headerImageUrl}
               <img src={c.headerImageUrl} alt="" width="92" height="42" loading="lazy" />
             {:else}
               <div class="cover-fallback" aria-hidden="true">?</div>
             {/if}
-          </div>
+          </a>
 
           <div class="info">
-            <h2 class="name">{c.name}</h2>
+            <a
+              class="store-link name-link"
+              href={`https://store.steampowered.com/app/${c.appid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Ver ${c.name} en la tienda de Steam`}
+            >
+              <h2 class="name">{c.name}</h2>
+            </a>
             <p class="meta">
               {genresOf(c)}
               {#if yearOf(c)}· {yearOf(c)}{/if}
@@ -528,7 +513,45 @@
     Estimaciones basadas en HowLongToBeat, pueden no ser exactas. No afiliado a
     Valve ni a Steam.
   </p>
+    </div>
+  </div>
+
+  {#if filterOpen}
+    <div class="modal-backdrop" onclick={onModalBackdropClick}>
+      <div
+        class="modal"
+        id="mobile-filters"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filtros y ordenación"
+      >
+        <div class="modal-head">
+          <h2 class="modal-title">Filtros</h2>
+          <button
+            class="modal-close"
+            type="button"
+            aria-label="Cerrar filtros"
+            bind:this={filterCloseBtn}
+            onclick={closeFilters}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <FiltersPanel
+          filters={filters}
+          availableGenres={availableGenres}
+          activeCount={activeCount}
+          onreset={resetFilters}
+          idPrefix="modal"
+        />
+      </div>
+    </div>
+  {/if}
 </section>
+
+<svelte:window onkeydown={onWindowKeydown} onresize={closeFiltersIfDesktop} />
 
 <style>
   .explorer {
@@ -537,95 +560,146 @@
     gap: 1.125rem;
   }
 
-  .toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 5;
+  .layout {
+    display: grid;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .section {
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--surface, #0f1420) 88%, transparent);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    gap: 1rem;
+  }
+  .filters-side {
+    display: none;
   }
 
-  .toolbar-actions,
-  .toolbar-ranges {
+  .main-head {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.625rem;
-    align-items: flex-end;
+    align-items: center;
   }
-  .toolbar-ranges {
-    row-gap: 0.5rem;
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-  .field.grow {
-    flex: 1 1 220px;
-    min-width: 220px;
-  }
-  .field.small {
-    width: 92px;
-  }
-
-  .field label {
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted, #94a3b8);
-  }
-
-  input[type='search'],
-  input[type='number'],
-  select {
-    font: inherit;
-    color: inherit;
-    padding: 0.5rem 0.625rem;
-    border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--surface, #0f1420) 60%, #000);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-  input[type='search']:focus-visible,
-  input[type='number']:focus-visible,
-  select:focus-visible {
-    outline: none;
-    border-color: var(--accent, #7c8dff);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #7c8dff) 25%, transparent);
-  }
-
-  .check {
+  .filters-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.875rem;
-    color: var(--muted, #94a3b8);
+    justify-content: center;
+    gap: 0.45rem;
+    font: inherit;
+    font-weight: 600;
+    color: var(--text, #f1f5f9);
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface, #0f1420) 70%, #000);
     cursor: pointer;
-    padding-bottom: 0.45rem;
+    transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
   }
-  .check input {
-    accent-color: var(--accent, #7c8dff);
+  .filters-toggle:hover {
+    border-color: var(--accent, #7c8dff);
+  }
+  .filters-toggle:active {
+    transform: scale(0.97);
+  }
+  .count-badge {
+    min-width: 1.3rem;
+    height: 1.3rem;
+    padding: 0 0.3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    color: #0b1020;
+    background: var(--accent, #7c8dff);
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
+  @media (min-width: 1024px) {
+    .layout {
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+    .filters-side {
+      display: block;
+      position: sticky;
+      top: 1.5rem;
+    }
+    .filters-toggle {
+      display: none;
+    }
+  }
+
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(3, 7, 18, 0.62);
+    backdrop-filter: blur(6px);
+    animation: fade-in 0.18s ease;
+  }
+  .modal {
+    width: min(100%, 420px);
+    max-height: 86vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem;
+    border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
+    border-radius: 16px;
+    background: var(--surface, #0f1420);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    animation: rise-in 0.22s cubic-bezier(0.22, 0.68, 0.28, 1);
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+  .modal-title {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+  .modal-close {
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text, #f1f5f9) 10%, transparent);
+    color: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .modal-close:hover {
+    background: color-mix(in srgb, var(--text, #f1f5f9) 18%, transparent);
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  .link-btn:focus-visible {
+    outline: 2px solid var(--accent, #7c8dff);
+    outline-offset: 2px;
   }
 
   .link-btn {
@@ -664,6 +738,7 @@
   }
   .count strong {
     color: var(--text, #f1f5f9);
+    font-variant-numeric: tabular-nums;
   }
   .error {
     margin: 0;
@@ -701,10 +776,11 @@
   }
   .skeleton-card {
     display: grid;
-    grid-template-columns: 92px 1fr;
+    grid-template-columns: 92px 1fr auto;
     align-items: center;
     gap: 1rem;
-    padding: 1rem;
+    padding: 0.7rem 0.9rem;
+    min-height: 90px;
     border-radius: 14px;
     border: 1px solid var(--border, rgba(148, 163, 184, 0.1));
     background: color-mix(in srgb, var(--surface, #0f1420) 75%, #000);
@@ -725,20 +801,27 @@
     width: 92px;
     height: 42px;
   }
+  .sk-block {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
   .sk-name {
     height: 14px;
     width: 55%;
-    margin-bottom: 0.5rem;
   }
   .sk-meta {
     height: 11px;
     width: 35%;
   }
   .sk-rail {
-    grid-column: 1 / -1;
     height: 7px;
     border-radius: 999px;
     width: 100%;
+  }
+  .sk-stats {
+    width: 170px;
+    height: 42px;
   }
   @keyframes shim {
     from {
@@ -750,11 +833,30 @@
   }
 
   .empty {
-    padding: 2.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 3rem 1rem;
     text-align: center;
     color: var(--muted, #94a3b8);
     border: 1px dashed var(--border, rgba(148, 163, 184, 0.28));
     border-radius: 14px;
+  }
+  .empty-icon {
+    opacity: 0.55;
+    margin-bottom: 0.5rem;
+  }
+  .empty-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text, #f1f5f9);
+  }
+  .empty-text {
+    margin: 0 0 0.5rem;
+    max-width: 34ch;
+    text-wrap: pretty;
   }
 
   .grid {
@@ -763,19 +865,6 @@
     padding: 0;
     display: grid;
     gap: 0.7rem;
-  }
-  .grid.visible {
-    animation: rise 0.25s ease;
-  }
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
   }
 
   .card {
@@ -790,14 +879,43 @@
     content-visibility: auto;
     contain-intrinsic-size: auto 90px;
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    animation: card-in 0.34s cubic-bezier(0.22, 0.68, 0.28, 1) both;
+    animation-delay: calc(var(--i, 0) * 30ms);
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px) scale(0.992);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
   .card:hover {
     transform: translateY(-2px);
     border-color: var(--border, rgba(148, 163, 184, 0.32));
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
   }
+  .card:active {
+    transform: translateY(-1px) scale(0.995);
+  }
+
+  .store-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .store-link:hover .name {
+    color: var(--accent, #7c8dff);
+  }
+  .name-link {
+    display: block;
+    min-width: 0;
+  }
 
   .cover {
+    display: block;
     width: 92px;
     height: 42px;
     border-radius: 8px;
@@ -927,34 +1045,35 @@
     text-align: center;
   }
 
-  input[type='search'],
-  input[type='number'],
-  select,
   button {
     touch-action: manipulation;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .card,
-    .toolbar,
-    .link-btn,
-    input[type='search'],
-    input[type='number'],
-    select {
+    .filters-toggle,
+    .modal-backdrop,
+    .modal,
+    .modal-close,
+    .link-btn {
       transition: none;
     }
     .pulse,
     .sk {
       animation: none;
     }
-    .grid.visible {
+    .card {
       animation: none;
     }
   }
 
   @media (max-width: 720px) {
-    .card {
+    .card,
+    .skeleton-card {
       grid-template-columns: 92px 1fr;
+    }
+    .skeleton-card .sk-stats {
+      display: none;
     }
     .stats {
       grid-column: 1 / -1;
