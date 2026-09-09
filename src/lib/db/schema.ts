@@ -83,6 +83,10 @@ export const userGames = pgTable(
     achievementsUnlocked: integer('achievements_unlocked').default(0).notNull(),
     lastPlayedAt: timestamp('last_played_at', { withTimezone: true }),
     librarySyncedAt: timestamp('library_synced_at', { withTimezone: true }),
+    // Non-null = the last library attempt for this game failed (e.g. Steam
+    // 403/private profile) and the next daily sync should retry it. Cleared on
+    // success. Without this, a transient failure would be final forever.
+    librarySyncError: text('library_sync_error'),
   },
   (t) => [
     uniqueIndex('user_games_user_appid_idx').on(t.userId, t.appid),

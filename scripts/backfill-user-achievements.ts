@@ -4,7 +4,12 @@
 // forced library sync so every game re-fetches its achievement list and stores
 // per-user unlock state (avg_global_rarity_remaining depends on it).
 // Idempotent and safely re-runnable.
-// Usage: node --env-file=.env.local --import tsx scripts/backfill-user-achievements.ts [steamId]
+// Usage:
+//   node --env-file=.env.local --import tsx scripts/backfill-user-achievements.ts [steamId]
+//   node --env-file=.env.local --import tsx scripts/backfill-user-achievements.ts --retry-only
+// `--retry-only` runs syncLibrary WITHOUT force: only games still flagged with
+// `library_sync_error` (failed attempts, e.g. after the profile was private)
+// get re-fetched. Combine with mark-stalled-achievements.ts to heal legacy rows.
 import { eq } from 'drizzle-orm';
 import { db } from '../src/lib/db/client';
 import { users } from '../src/lib/db/schema';
@@ -13,7 +18,10 @@ import { syncLibrary } from '../src/lib/sync/syncLibrary';
 async function main() {
   if (!db) throw new Error('DATABASE_URL not configured');
 
-  const steamIdArg = process.argv[2];
+  const args = process.argv.slice(2);
+  const retryOnly = args.includes('--retry-only');
+  const steamIdArg = args.find((a) => a !== '--retry-only');
+
   const user = steamIdArg
     ? await db
         .select({ id: users.id, steamId: users.steamId })
@@ -27,8 +35,9 @@ async function main() {
         .limit(1);
   if (!user[0]) throw new Error('No user found');
 
-  console.log(`Backfilling user_achievements for ${user[0].steamId} (force library sync)...`);
-  const result = await syncLibrary(user[0].id, { force: true });
+  const mode = retryOnly ? 'retry-only' : 'force';
+  console.log(`Backfilling user_achievements for ${user[0].steamId} (${mode} library sync)...`);
+  const result = await syncLibrary(user[0].id, retryOnly ? {} : { force: true });
   console.log('[backfill-user-achievements]', JSON.stringify(result));
 }
 

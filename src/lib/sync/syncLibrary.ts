@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../db/client';
 import { achievements, games, users, userAchievements, userGames } from '../db/schema';
 import { getOwnedGames, getPlayerAchievements } from '../steam/webApi';
@@ -68,27 +68,27 @@ export async function syncLibrary(
     // Upsert the per-user library row (playtime, last played).
     await db
       .insert(userGames)
-      .values({
-        userId: user[0].id,
-        appid: g.appid,
-        playtimeMinutes: g.playtime_forever,
-        playtime2weeksMinutes: g.playtime_2weeks,
-        lastPlayedAt: g.rtime_last_played ? new Date(g.rtime_last_played * 1000) : null,
-      })
-      .onConflictDoUpdate({
-        target: [userGames.userId, userGames.appid],
-        set: {
-          playtimeMinutes: sql`excluded.playtime_minutes`,
-          playtime2weeksMinutes: sql`excluded.playtime_2weeks_minutes`,
-          lastPlayedAt: sql`excluded.last_played_at`,
-        },
-      });
+.values({
+          userId: user[0].id,
+          appid: g.appid,
+          playtimeMinutes: g.playtime_forever,
+          playtime2weeksMinutes: g.playtime_2weeks,
+          lastPlayedAt: g.rtime_last_played ? new Date(g.rtime_last_played * 1000) : null,
+        })
+        .onConflictDoUpdate({
+          target: [userGames.userId, userGames.appid],
+          set: {
+            playtimeMinutes: sql`excluded.playtime_minutes`,
+            playtime2weeksMinutes: sql`excluded.playtime_2weeks_minutes`,
+            lastPlayedAt: sql`excluded.last_played_at`,
+            librarySyncError: null,
+          },
+        });
 
-    // Resumability: skip only games whose achievement progress is already
-    // fully synced (i.e. no row still has library_synced_at = NULL). A fresh
-    // user_games row just upserted above has NULL, so it gets processed now;
-    // games synced on a prior run (library_synced_at set) are skipped so a
-    // serverless run can resume where it left off.
+    // Resumability + auto-retry: process any game whose achievement progress
+    // is not yet fully synced (library_synced_at = NULL) OR whose last attempt
+    // failed (library_sync_error set). A transient failure (e.g. a profile
+    // that was private) is retried on the next cron instead of being final.
     if (!opts.force) {
       const pending = await db
         .select({ id: userGames.id })
@@ -97,7 +97,10 @@ export async function syncLibrary(
           and(
             eq(userGames.userId, user[0].id),
             eq(userGames.appid, g.appid),
-            isNull(userGames.librarySyncedAt),
+            or(
+              isNull(userGames.librarySyncedAt),
+              isNotNull(userGames.librarySyncError),
+            ),
           ),
         )
         .limit(1);
@@ -111,26 +114,29 @@ export async function syncLibrary(
     if (!g.has_community_visible_stats) {
       await db
         .update(userGames)
-        .set({ librarySyncedAt: new Date() })
+        .set({ librarySyncedAt: new Date(), librarySyncError: null })
         .where(and(eq(userGames.userId, user[0].id), eq(userGames.appid, g.appid)));
       result.achievementSynced += 1;
       continue;
     }
 
+    let attemptError: string | null = null;
     await steamLimiter.next();
     const res = await getPlayerAchievements(user[0].steamId, g.appid).catch((e) => {
       // Steam can return 403 for games where the user has no stats (e.g. never
-      // played). Don't let one failing game poison the run: log it, mark the
-      // game as attempted so it isn't retried EVERY sync (avoids API/rate
-      // burn + daily log spam). A manual refresh (refreshGame) or `force`
-      // re-attempts it deliberately.
-      console.warn(`[syncLibrary] GetPlayerAchievements failed for appid=${g.appid} (${user[0].steamId}); marking attempted. ${(e as Error).message}`);
+      // played) or while the profile is private. Don't let one failing game
+      // poison the run: log it and record the error so the next daily sync
+      // retries it (once the underlying cause clears, e.g. profile made
+      // public). A manual refresh (refreshGame) or `force` retries now.
+      attemptError = (e as Error).message;
+      console.warn(`[syncLibrary] GetPlayerAchievements failed for appid=${g.appid} (${user[0].steamId}); marking for retry. ${attemptError}`);
       return null;
     });
     if (!res?.playerstats?.success) {
+      attemptError ??= 'GetPlayerAchievements: no playerstats';
       await db
         .update(userGames)
-        .set({ librarySyncedAt: new Date() })
+        .set({ librarySyncedAt: new Date(), librarySyncError: attemptError.slice(0, 300) })
         .where(and(eq(userGames.userId, user[0].id), eq(userGames.appid, g.appid)));
       result.skipped += 1;
       continue;
@@ -192,7 +198,7 @@ export async function syncLibrary(
 
     await db
       .update(userGames)
-      .set({ achievementsUnlocked: unlockedCount, librarySyncedAt: new Date() })
+      .set({ achievementsUnlocked: unlockedCount, librarySyncedAt: new Date(), librarySyncError: null })
       .where(and(eq(userGames.userId, user[0].id), eq(userGames.appid, g.appid)));
 
     result.achievementSynced += 1;
