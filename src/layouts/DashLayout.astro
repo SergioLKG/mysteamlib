@@ -9,14 +9,15 @@ interface SessionUser {
 
 interface Props {
   title: string;
+  description?: string;
   page: 'dashboard' | 'platino';
   user: SessionUser;
 }
 
-const { title, page, user } = Astro.props;
+const { title, description, page, user } = Astro.props;
 ---
 
-<BaseLayout {title}>
+<BaseLayout {title} {description}>
   <style is:global>
     :root {
       color-scheme: dark;

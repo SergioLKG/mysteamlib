@@ -6,6 +6,8 @@ import { and, eq, sql } from 'drizzle-orm';
 
 const user = Astro.locals.user!;
 const title = 'Mi Dashboard · mysteamlib';
+const description =
+  'Mi resumen de juego: perfil de Steam, logros desbloqueados, platinados y horas, con acceso a todas las herramientas.';
 
 const profile = (await db
   .select({
@@ -74,7 +76,7 @@ const statCards = [
 ];
 ---
 
-<DashLayout {title} page="dashboard" user={user}>
+<DashLayout {title} {description} page="dashboard" user={user}>
   <main id="main-content" class="page">
     <div class="hero">
       <h1>Mi Dashboard</h1>
