@@ -72,6 +72,10 @@ export const GET: APIRoute = async (context) => {
       {
         headers: {
           'Content-Type': 'application/json',
+          // Intentional: per-user payload, must not be cached at the CDN/edge
+          // (a shared cache could leak another user's library). Caching is
+          // handled client-side in LibraryExplorer (debounced + single-flight
+          // + 60s TTL per query string).
           'Cache-Control': 'no-store',
         },
       },

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
 
   interface Candidate {
     appid: number;
@@ -61,7 +61,20 @@
   let total = $state(0);
   let partialEstimates = $state(0);
 
-  let searchTimer: ReturnType<typeof setTimeout> | undefined;
+  // Unified debounce for every filter change (search + selects + toggles), so
+  // rapid interactions collapse into a single request per burst.
+  let reloadTimer: ReturnType<typeof setTimeout> | undefined;
+  // In-flight request: cancel it when a newer filter state supersedes it, so we
+  // never apply an out-of-order response nor waste a round-trip.
+  let controller: AbortController | undefined;
+  // Last request we actually sent; identical re-requests are skipped (e.g. the
+  // user toggles a filter back to the state that's already on screen).
+  let lastRequestKey = '';
+  // Small TTL cache keyed by the query string. Data only changes on the daily
+  // cron, so re-visiting a recent filter set can be served instantly without
+  // touching the server.
+  const cache = new Map<string, { data: ApiResponse; at: number }>();
+  const CACHE_TTL_MS = 60_000;
 
   const hasActiveFilters = $derived(
     filters.search !== '' ||
@@ -97,39 +110,77 @@
     history.replaceState(null, '', next);
   }
 
+  function applyData(data: ApiResponse): void {
+    candidates = data.candidates;
+    availableGenres = data.meta.availableGenres;
+    total = data.meta.total;
+    partialEstimates = data.meta.partialEstimates;
+  }
+
   async function load(): Promise<void> {
-    loading = true;
+    const key = requestKey();
+    if (key === lastRequestKey) return;
+    lastRequestKey = key;
+
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+      applyData(hit.data);
+      return;
+    }
+
+    loading = candidates.length === 0;
     error = null;
+    controller?.abort();
+    controller = new AbortController();
+    const myController = controller;
     try {
-      const res = await fetch(`/api/games/platinum-candidates?${buildParams().toString()}`);
+      const res = await fetch(`/api/games/platinum-candidates?${key}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as ApiResponse;
       if (!data.candidates) {
         error = data.error ?? 'Respuesta inesperada';
         return;
       }
-      candidates = data.candidates;
-      availableGenres = data.meta.availableGenres;
-      total = data.meta.total;
-      partialEstimates = data.meta.partialEstimates;
+      // A newer filter state started a request meanwhile: drop this one.
+      if (controller !== myController) return;
+      cache.set(key, { data, at: Date.now() });
+      applyData(data);
     } catch (e) {
+      if ((e as Error).name === 'AbortError') return;
       error = (e as Error).message;
     } finally {
       loading = false;
     }
   }
 
+  function requestKey(): string {
+    return buildParams().toString();
+  }
+
+  function scheduleReload(delay = 220): void {
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(() => void reload(), delay);
+  }
+
   function reload(): void {
+    const key = requestKey();
+    if (key === lastRequestKey && candidates.length > 0 && !error) return;
     syncUrl();
     void load();
   }
 
   function onSearchInput(): void {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => void reload(), 350);
+    scheduleReload(320);
+  }
+
+  function onFilterChange(): void {
+    scheduleReload();
   }
 
   function resetFilters(): void {
+    clearTimeout(reloadTimer);
     filters = {
       search: '',
       progress: 'all',
@@ -178,6 +229,11 @@
   onMount(() => {
     initFromUrl();
     void load();
+  });
+
+  onDestroy(() => {
+    clearTimeout(reloadTimer);
+    controller?.abort();
   });
 
   function hours(minutes: number): string {
@@ -236,13 +292,18 @@
           spellcheck={false}
           bind:value={filters.search}
           oninput={onSearchInput}
-          onkeydown={(e) => { if (e.key === 'Enter') reload(); }}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') {
+              clearTimeout(reloadTimer);
+              reload();
+            }
+          }}
         />
       </div>
 
       <div class="field">
         <label for="fx-progress">Progreso</label>
-        <select id="fx-progress" name="state" bind:value={filters.progress} onchange={reload}>
+        <select id="fx-progress" name="state" bind:value={filters.progress} onchange={onFilterChange}>
           <option value="all">Todos</option>
           <option value="unplayed">Sin jugar</option>
           <option value="started">Empezados</option>
@@ -252,7 +313,7 @@
 
       <div class="field">
         <label for="fx-genre">Género</label>
-        <select id="fx-genre" name="genre" bind:value={filters.genre} onchange={reload}>
+        <select id="fx-genre" name="genre" bind:value={filters.genre} onchange={onFilterChange}>
           <option value="">Todos</option>
           {#each availableGenres as g (g)}
             <option value={g}>{g}</option>
@@ -262,7 +323,7 @@
 
       <div class="field">
         <label for="fx-sort">Ordenar</label>
-        <select id="fx-sort" name="sort" bind:value={filters.sort} onchange={reload}>
+        <select id="fx-sort" name="sort" bind:value={filters.sort} onchange={onFilterChange}>
           <option value="difficulty">Recomendado</option>
           <option value="remaining">Logros restantes</option>
           <option value="time">Tiempo estimado</option>
@@ -272,7 +333,7 @@
 
       <div class="field">
         <label for="fx-direction">Dirección</label>
-        <select id="fx-direction" name="direction" bind:value={filters.direction} onchange={reload}>
+        <select id="fx-direction" name="direction" bind:value={filters.direction} onchange={onFilterChange}>
           <option value="asc">Asc</option>
           <option value="desc">Desc</option>
         </select>
@@ -289,7 +350,7 @@
           min="0"
           autocomplete="off"
           bind:value={filters.achievementsMin}
-          onchange={reload}
+          onchange={onFilterChange}
         />
       </div>
       <div class="field small">
@@ -301,7 +362,7 @@
           min="0"
           autocomplete="off"
           bind:value={filters.achievementsMax}
-          onchange={reload}
+          onchange={onFilterChange}
         />
       </div>
       <div class="field small">
@@ -314,7 +375,7 @@
           step="1"
           autocomplete="off"
           bind:value={filters.timeMin}
-          onchange={reload}
+          onchange={onFilterChange}
         />
       </div>
       <div class="field small">
@@ -327,16 +388,16 @@
           step="1"
           autocomplete="off"
           bind:value={filters.timeMax}
-          onchange={reload}
+          onchange={onFilterChange}
         />
       </div>
 
       <label class="check" for="fx-notime">
-        <input id="fx-notime" type="checkbox" bind:checked={filters.includeNoTime} onchange={reload} />
+        <input id="fx-notime" type="checkbox" bind:checked={filters.includeNoTime} onchange={onFilterChange} />
         <span>Incluir juegos sin dato de tiempo</span>
       </label>
       <label class="check" for="fx-completed">
-        <input id="fx-completed" type="checkbox" bind:checked={filters.showCompleted} onchange={reload} />
+        <input id="fx-completed" type="checkbox" bind:checked={filters.showCompleted} onchange={onFilterChange} />
         <span>Ver platinados (100%)</span>
       </label>
       {#if hasActiveFilters}
