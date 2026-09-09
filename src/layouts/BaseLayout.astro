@@ -10,18 +10,39 @@ const { title = 'mysteamlib' } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#0a0e17" />
+    <link rel="preconnect" href="https://media.steampowered.com" crossorigin />
     <title>{title}</title>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Saltar al contenido</a>
     <slot />
     <Analytics />
     <SpeedInsights />
   </body>
 </html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 10px 0;
+    background: var(--accent, #7c8dff);
+    color: #0a0e17;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    left: 0;
+  }
+</style>
