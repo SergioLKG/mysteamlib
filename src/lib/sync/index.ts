@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client';
 import { users, userGames, games } from '../db/schema';
-import { syncLibrary, type SyncResult } from './syncLibrary';
+import { syncLibrary, syncLibraryIncremental, type IncrementalSyncResult, type SyncResult } from './syncLibrary';
 import { syncMetadata, type SyncMetadataResult } from './syncMetadata';
 
 export interface BatchConfig {
@@ -16,10 +16,19 @@ const DEFAULT_CONFIG: Required<BatchConfig> = {
   maxMetadataApps: 25,
 };
 
+// Cron freshness: re-pull achievement states for games older than 24h each
+// daily run. Combined with the batched cap (40/day/user) this rotates through
+// the library over time instead of being a one-shot fill.
+const CRON_REFRESH_OLDER_THAN_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Daily cron entry point: sync library (owned games + achievements) for a
  * bounded number of users, then queue metadata work for any new games.
- * Idempotent and resumable per-game via `library_synced_at`.
+ * Idempotent and resumable per-game via `library_synced_at`. Runs a bounded
+ * batch per user (config.maxAchievementGames) in REFRESH mode: games never
+ * synced or with an error are filled, and games older than 24h are re-pulled,
+ * so stale achievement states (SAMP/DLC changes, etc.) rotate to freshness
+ * over successive runs instead of staying frozen forever.
  */
 export async function runDailySync(cfg: BatchConfig = {}): Promise<unknown> {
   if (!db) return { ok: false, reason: 'db-not-configured' };
@@ -30,11 +39,14 @@ export async function runDailySync(cfg: BatchConfig = {}): Promise<unknown> {
     .from(users)
     .limit(config.maxUsers);
 
-  const results: { user: string; library: SyncResult | null; error?: string }[] = [];
+  const results: { user: string; library: SyncResult | IncrementalSyncResult | null; error?: string }[] = [];
 
   for (const u of activeUsers) {
     try {
-      const library = await syncLibrary(u.id, { force: false });
+      const library = await syncLibraryIncremental(u.id, {
+        maxGames: config.maxAchievementGames,
+        refreshOlderThanMs: CRON_REFRESH_OLDER_THAN_MS,
+      });
       const metadataAppids = library.needsMetadata.slice(0, config.maxMetadataApps);
       if (metadataAppids.length > 0) {
         await syncMetadata(metadataAppids, { force: false });

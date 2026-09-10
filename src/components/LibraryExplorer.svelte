@@ -44,7 +44,9 @@
   const ACH_MAX = 150;
   const TIME_MAX = 500;
 
-  let { syncing = false }: { syncing?: boolean } = $props();
+  let { syncing = false, autoRefresh = false }: { syncing?: boolean; autoRefresh?: boolean } = $props();
+
+  let refreshing = $state(false);
 
   let filters = $state<Filters>({
     search: '',
@@ -191,7 +193,33 @@
   }
 
   function refresh(): void {
-    void load();
+    void refreshLibrary();
+  }
+
+  // Pull fresh data from Steam in bounded chunks (the server decides how many
+  // games are due), then re-read the list from our DB. Used by the on-demand
+  // "Actualizar datos" button AND the age-based auto-refresh on page load.
+  async function refreshLibrary(): Promise<void> {
+    if (refreshing || loading) return;
+    refreshing = true;
+    try {
+      while (true) {
+        const res = await fetch('/api/sync/library', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as { done: boolean; error?: string };
+        if (data.error) throw new Error(data.error);
+        if (data.done) break;
+      }
+    } catch (e) {
+      error = (e as Error).message;
+      refreshing = false;
+      return;
+    }
+    refreshing = false;
+    await load();
   }
 
   function resetFilters(): void {
@@ -307,7 +335,11 @@
 
   onMount(() => {
     initFromUrl();
-    void load();
+    void load().then(() => {
+      // Data older than 6h → refresh in the background without blocking the
+      // first render; the list reloads automatically when done.
+      if (autoRefresh) void refreshLibrary();
+    });
   });
 
   onDestroy(() => {
@@ -383,6 +415,11 @@
         pueden aparecer con datos incompletos hasta que termine.
       </p>
     {/if}
+    {#if refreshing}
+      <p class="notice live">
+        Actualizando tu biblioteca desde Steam… se recargará la lista al terminar.
+      </p>
+    {/if}
     {#if error}
       <p class="error" role="alert">
         No se pudo cargar la lista: {error}. Reintenta en unos segundos o recarga la página.
@@ -411,8 +448,8 @@
           </svg>
           <span class="dir-label">{filters.direction === 'asc' ? 'Asc' : 'Desc'}</span>
         </button>
-        <button class="link-btn refresh" type="button" onclick={refresh} disabled={loading}>
-          {loading ? 'Actualizando…' : 'Actualizar datos'}
+        <button class="link-btn refresh" type="button" onclick={refresh} disabled={refreshing}>
+          {refreshing ? 'Actualizando…' : 'Actualizar datos'}
         </button>
       </div>
     </div>
@@ -775,6 +812,10 @@
     border: 1px dashed var(--border, rgba(148, 163, 184, 0.3));
     color: var(--muted, #94a3b8);
     font-size: 0.875rem;
+  }
+  .notice.live {
+    border-color: color-mix(in srgb, var(--accent, #7c8dff) 45%, transparent);
+    color: var(--text, #f1f5f9);
   }
   .count {
     margin: 0;
