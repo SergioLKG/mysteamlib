@@ -411,7 +411,7 @@
     {/if}
     {#if syncing}
       <p class="notice">
-        Mi biblioteca aún se está sincronizando por primera vez. Algunos juegos
+        Tu biblioteca aún se está sincronizando por primera vez. Algunos juegos
         pueden aparecer con datos incompletos hasta que termine.
       </p>
     {/if}
@@ -456,7 +456,7 @@
   </div>
 
   {#if loading && games.length === 0 && !error}
-    <div class="skeleton" role="status" aria-label="Cargando mi lista">
+    <div class="skeleton" role="status" aria-label="Cargando la lista">
       {#each Array(6) as _, i (i)}
         <div class="skeleton-card" aria-hidden="true">
           <span class="sk sk-cover"></span>
