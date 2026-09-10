@@ -7,7 +7,7 @@ import { and, eq, sql } from 'drizzle-orm';
 const user = Astro.locals.user!;
 const title = 'Mi Dashboard · mysteamlib';
 const description =
-  'Mi resumen de juego: perfil de Steam, logros desbloqueados, platinados y horas, con acceso a todas las herramientas.';
+  'Tu resumen de juego: perfil de Steam, logros desbloqueados, platinados y horas, con acceso a todas las herramientas.';
 
 const profile = (await db
   .select({
@@ -74,7 +74,7 @@ const lastSync = profile?.lastSyncedAt;
 const visibilityLabel = profile?.profileVisibility === 'private' ? 'Privado' : 'Público';
 
 const statCards = [
-  { label: 'Juegos en mi biblioteca', value: stats.games },
+  { label: 'Juegos en tu biblioteca', value: stats.games },
   { label: 'Logros desbloqueados', value: stats.unlocked },
   { label: 'Platinados', value: stats.platinized },
   { label: 'Horas jugadas', value: stats.playtimeHours },
@@ -86,7 +86,7 @@ const statCards = [
     <div class="hero">
       <h1>Mi Dashboard</h1>
       <p class="lede">
-        Mi resumen de juego: perfil, logros y horas, y el arranque a todas las
+        Tu resumen de juego: perfil, logros y horas, y el arranque a todas las
         herramientas de mysteamlib.
       </p>
     </div>
@@ -114,7 +114,7 @@ const statCards = [
       </div>
       <p class="sync-note">
         {!lastSync
-          ? 'Mi biblioteca aún no se ha sincronizado.'
+          ? 'Tu biblioteca aún no se ha sincronizado.'
           : `Última sincronización: ${lastSync.toLocaleString('es-ES', {
               day: '2-digit',
               month: 'short',
@@ -139,8 +139,8 @@ const statCards = [
         <div>
           <h3>Mi próximo platino</h3>
           <p>
-            Mi lista de juegos con logros pendientes, filtrable y ordenable por
-            lo cerca que estoy del 100&nbsp;%.
+            Tu lista de juegos con logros pendientes, filtrable y ordenable por
+            lo cerca que estás del 100&nbsp;%.
           </p>
         </div>
         <span class="go" aria-hidden="true">→</span>
