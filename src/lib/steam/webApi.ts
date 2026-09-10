@@ -130,6 +130,14 @@ export interface GetPlayerSummariesResponse {
   };
 }
 
+export interface ResolveVanityURLResponse {
+  response?: {
+    success: number;
+    steamid?: string;
+    message?: string;
+  };
+}
+
 // --- Methods ---
 
 export function getOwnedGames(
@@ -185,4 +193,10 @@ export function getPlayerSummaries(steamIds: string[]): Promise<GetPlayerSummari
     'v2',
     params,
   );
+}
+
+export function resolveVanityUrl(vanity: string): Promise<ResolveVanityURLResponse> {
+  return steamRequest<ResolveVanityURLResponse>('ISteamUser', 'ResolveVanityURL', 'v1', {
+    vanityurl: vanity,
+  });
 }
