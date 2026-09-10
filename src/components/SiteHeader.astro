@@ -227,7 +227,7 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
     font-size: 0.85rem;
     color: var(--muted, #94a3b8);
     background: transparent;
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     cursor: pointer;
@@ -235,8 +235,8 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
   }
   .ghost:hover {
     color: var(--text, #f1f5f9);
-    border-color: color-mix(in srgb, var(--accent, #7c8dff) 45%, var(--border));
-    background: var(--accent-3, rgba(148, 163, 184, 0.08));
+    border-color: color-mix(in srgb, var(--accent-3, #ff7c7c) 45%, var(--border, #b8949429));
+    background: var(--accent-3, rgba(239, 0, 0, 0.549));
     transform: translateY(-1px);
   }
 
