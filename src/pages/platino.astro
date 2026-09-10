@@ -10,14 +10,22 @@ const title = 'Mi próximo platino · mysteamlib';
 const description =
   'Mis juegos de Steam con logros pendientes, ordenados por lo cerca que estoy del 100 %. Filtro y decido cuál platinar ahora.';
 
+const REFRESH_TTL_MS = 6 * 60 * 60 * 1000;
+
 let syncing = false;
+let autoRefresh = false;
 if (db) {
   const row = await db
     .select({ lastSyncedAt: users.lastSyncedAt })
     .from(users)
     .where(eq(users.id, user.userId))
     .limit(1);
+  // First login without imported data → pasarela de primera carga.
+  if (row[0] && !row[0].lastSyncedAt) {
+    return Astro.redirect('/sync?from=/platino');
+  }
   syncing = !row[0]?.lastSyncedAt;
+  autoRefresh = !!row[0]?.lastSyncedAt && Date.now() - row[0].lastSyncedAt.getTime() > REFRESH_TTL_MS;
 }
 ---
 
@@ -26,12 +34,11 @@ if (db) {
     <div class="hero">
       <h1>Mi próximo platino</h1>
       <p class="lede">
-        Mis juegos con logros pendientes, ordenados por lo cerca que estoy del
-        100&nbsp;%. Afino con los filtros y decido cuál me toca ahora.
+        Listado de Juegos candidatos a ser completados por completo, ordenados por lo cerca que este de alcanzar el 100 %. Filtra y decide cuál platinar ahora.
       </p>
     </div>
 
-    <LibraryExplorer client:load {syncing} />
+    <LibraryExplorer client:load {syncing} {autoRefresh} />
   </main>
 </DashLayout>
 

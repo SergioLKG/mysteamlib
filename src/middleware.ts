@@ -1,8 +1,8 @@
 import { defineMiddleware } from 'astro:middleware';
 import { getSession } from './lib/auth/session';
 
-const protectedPaths = ['/dashboard', '/platino'];
-const protectedApiPrefixes = ['/api/games'];
+const protectedPaths = ['/dashboard', '/platino', '/sync'];
+const protectedApiPrefixes = ['/api/games', '/api/sync'];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const url = new URL(context.request.url);

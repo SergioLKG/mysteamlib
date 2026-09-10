@@ -10,7 +10,7 @@ interface SessionUser {
 
 interface Props {
   user?: SessionUser | null;
-  page?: 'home' | 'dashboard' | 'platino';
+  page?: 'home' | 'dashboard' | 'platino' | 'sync';
 }
 
 const { user = null, page = 'home' } = Astro.props;
@@ -187,8 +187,8 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
     align-items: center;
     gap: 0.5rem;
     padding: 0.22rem 0.85rem 0.22rem 0.22rem;
-    border: 1px solid var(--border);
-    border-radius: 999px;
+    border: 1px solid transparent;
+    border-radius: 12px;
     text-decoration: none;
     transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
   }
@@ -228,14 +228,16 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
     color: var(--muted, #94a3b8);
     background: transparent;
     border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 0.32rem 0.85rem;
+    border-radius: 12px;
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
   }
   .ghost:hover {
     color: var(--text, #f1f5f9);
     border-color: color-mix(in srgb, var(--accent, #7c8dff) 45%, var(--border));
+    background: var(--accent-3, rgba(148, 163, 184, 0.08));
+    transform: translateY(-1px);
   }
 
   .steam-sign-in {

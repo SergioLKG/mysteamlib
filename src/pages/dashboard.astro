@@ -21,6 +21,11 @@ const profile = (await db
   .where(eq(users.id, user.userId))
   .limit(1))[0];
 
+// First login without imported data → pasarela de primera carga.
+if (profile && !profile.lastSyncedAt) {
+  return Astro.redirect('/sync?from=/dashboard');
+}
+
 const stats = {
   games: 0,
   unlocked: 0,

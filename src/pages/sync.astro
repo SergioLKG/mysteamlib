@@ -1,0 +1,21 @@
+---
+import SyncRunner from '../components/SyncRunner.svelte';
+import DashLayout from '../layouts/DashLayout.astro';
+
+// Pasarela de primera carga: solo se llega aquí cuando el usuario aún no tiene
+// datos importados (gates de /dashboard y /platino redirigen aquí). Importa la
+// biblioteca por tandas y luego redirige al destino original.
+const user = Astro.locals.user!;
+const title = 'Preparando tu biblioteca · mysteamlib';
+const description =
+  'Importando tu biblioteca de Steam por primera vez: juegos y logros, para que mysteamlib pueda recomendarte tu próximo platino.';
+
+const from = new URL(Astro.request.url).searchParams.get('from');
+const fromAllowed = from === '/dashboard' || from === '/platino' ? from : '/dashboard';
+---
+
+<DashLayout {title} {description} page="sync" user={user}>
+  <main id="main-content">
+    <SyncRunner client:load from={fromAllowed} />
+  </main>
+</DashLayout>
