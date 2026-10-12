@@ -72,9 +72,8 @@ Shared **catalog** (`games`, `achievements`, `hltb_matches`) is synced once per 
 ## 6. Target evolution (known gaps → direction)
 
 - Move DB access out of `dashboard.astro`, `platino.astro` and `SiteHeader.astro` into `lib/db/queries/{dashboard,users}.ts`.
-- Split `LibraryExplorer.svelte` (~1300 lines) into card/toolbar components plus a `.svelte.ts` view-model; share `ACH_MAX`/`TIME_MAX` with `FiltersPanel`.
+- Split `LibraryExplorer.svelte` (~1250 lines) into card/toolbar components plus a `.svelte.ts` view-model (its filter/sort logic already lives in `lib/platinum/view.ts`, covered by `npm test`).
 - Centralize sync tunables (`MAX_GAMES_PER_CHUNK`, `REFRESH_TTL_MS`, cron batch config) in `lib/sync/config.ts`.
-- Add `astro check` + `vitest` for pure functions (scoring, normalization, `buildView` parity, parsers); then a minimal CI (`check` + `build`).
 
 ## 7. Conventions
 

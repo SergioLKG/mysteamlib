@@ -9,7 +9,7 @@
 //   node --env-file=.env.local --import tsx scripts/backfill-user-achievements.ts --retry-only
 // `--retry-only` runs syncLibrary WITHOUT force: only games still flagged with
 // `library_sync_error` (failed attempts, e.g. after the profile was private)
-// get re-fetched. Combine with mark-stalled-achievements.ts to heal legacy rows.
+// get re-fetched.
 import { eq } from 'drizzle-orm';
 import { requireDb } from '../src/lib/db/client';
 import { users } from '../src/lib/db/schema';

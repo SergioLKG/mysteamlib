@@ -33,6 +33,8 @@ export const users = pgTable(
     }).default('private'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+    // Stamped after every daily-cron attempt (success or error); drives cron rotation.
+    lastCronAttemptAt: timestamp('last_cron_attempt_at', { withTimezone: true }),
   },
   (t) => [uniqueIndex('users_steam_id_idx').on(t.steamId)],
 );
