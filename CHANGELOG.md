@@ -17,6 +17,8 @@ The project has not published tagged releases yet, so entries are grouped by mil
 - `users.last_cron_attempt_at` column so the daily cron rotates through users fairly, whether their last attempt succeeded or failed.
 
 ### Changed
+- The Vercel production build now applies pending Drizzle migrations before `astro build` (`VERCEL_ENV=production` only; local, preview and CI builds never migrate).
+- The privacy policy states that mysteamlib is not affiliated with Valve, like the terms of use.
 - `user_achievements` now stores only unlocked achievements (about 10x smaller); locked ones are derived from the catalog. Migration `0005` removes the old locked rows and a redundant index.
 - The profile lookup answers 502/503 with JSON when Steam fails instead of a bare 500.
 - Privacy policy describes the abuse-control data and the more frequent scheduled sync.

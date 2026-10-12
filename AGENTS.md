@@ -19,7 +19,7 @@ If `../docs/` is missing (fresh clone), rely on `ARCHITECTURE.md` and the code i
 
 - `npm run dev`: dev server on :4321. `npm run build`: production build.
 - `npm run check`: type-check (cheapest verification). `npm test`: vitest, pure logic only (no DB, no network).
-- `npm run db:generate`: SQL migration from `src/lib/db/schema.ts`. `npm run db:migrate` targets the **production** DB: **only with explicit owner approval**.
+- `npm run db:generate`: SQL migration from `src/lib/db/schema.ts`. `npm run db:migrate` targets the **production** DB: **only with explicit owner approval**. The Vercel production build runs `drizzle-kit migrate` itself (`VERCEL_ENV=production` only), so pushing to production applies pending migrations: keep them backwards compatible.
 - Local scripts: `node --env-file=.env.local --import tsx scripts/<name>.ts [flags]`. They hit the **real** DB.
 
 ## Stack (locked; do not reopen)
@@ -65,7 +65,7 @@ Astro 7 SSR + `@astrojs/vercel` (Hobby) · Svelte 5 islands (runes) · Neon Post
 
 ## Working agreement
 
-- Don't commit, push or run migrations unless the owner asks.
+- Don't commit, push or run migrations unless the owner asks (the Vercel production build applies pending migrations on deploy).
 - Features marked as backlog (e.g. "Resoluciones de Año Nuevo", public `/platino` by URL) are **only built on explicit request**.
 - Open product decisions are proposed with a default and confirmed by the owner, never fixed silently.
 - When a phase ends or the session reaches a clean breakpoint, end the reply with a **`Tareas para el dev:`** block: short, ordered, concrete. If there is nothing pending, write `Escribir "continuar"`.

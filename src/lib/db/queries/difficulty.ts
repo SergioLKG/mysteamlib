@@ -11,8 +11,8 @@
 // These are product decisions, kept as clear constants — adjust freely.
 export const DIFFICULTY_WEIGHTS = {
   achievements: 1.0,
-  rarity: 0.5,
-  time: 0.5,
+  rarity: 0.2,
+  time: 0.3,
 } as const;
 
 // Normalization ceilings: the number of remaining achievements / hours that
