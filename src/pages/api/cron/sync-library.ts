@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { runDailySync } from '../../../lib/sync';
+import { isCronAuthorized } from '../../../lib/auth/cron';
 
 export const prerender = false;
 
@@ -20,10 +21,3 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
 };
-
-function isCronAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // no secret configured → allow (dev/testing)
-  const auth = request.headers.get('authorization');
-  return auth === `Bearer ${secret}`;
-}

@@ -27,5 +27,6 @@ pnpm-debug.log*
 .idea/
 .vercel
 .env*
-*-lock.json
+!.env.example
+skills-lock.json
 *.lock
