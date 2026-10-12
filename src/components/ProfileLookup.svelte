@@ -29,7 +29,7 @@
   let result = $state<LookupOk | null>(null);
   let error = $state<string | null>(null);
 
-  const ctaHref = user ? '/dashboard' : '/api/auth/login?next=/dashboard';
+  const ctaHref = $derived(user ? '/dashboard' : '/api/auth/login?next=/dashboard');
 
   async function lookup(e: SubmitEvent) {
     e.preventDefault();
