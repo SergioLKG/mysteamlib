@@ -30,11 +30,11 @@ export const POST: APIRoute = async (context) => {
   }
 
   try {
-    const { db } = await import('../../../lib/db/client');
+    const { requireDb } = await import('../../../lib/db/client');
     const { users } = await import('../../../lib/db/schema');
     const { eq } = await import('drizzle-orm');
 
-    const [usr] = await db
+    const [usr] = await requireDb()
       .select({ lastSyncedAt: users.lastSyncedAt })
       .from(users)
       .where(eq(users.id, user.userId))

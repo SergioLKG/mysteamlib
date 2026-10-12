@@ -18,7 +18,7 @@
  *   node --env-file=.env.local --import tsx scripts/backfill-metadata.ts --force
  */
 import { count, isNull, sql } from 'drizzle-orm';
-import { db, } from '../src/lib/db/client';
+import { requireDb } from '../src/lib/db/client';
 import { games } from '../src/lib/db/schema';
 import { runMetadataSync } from '../src/lib/sync';
 
@@ -29,10 +29,7 @@ const BATCH = Number(process.env.BATCH ?? 50);
 const FORCE = process.argv.includes('--force');
 const MAX_STALLED_ITERATIONS = 3;
 
-if (!db) {
-  console.error('DATABASE_URL not set — aborting.');
-  process.exit(1);
-}
+const db = requireDb();
 
 async function pendingCount(): Promise<number> {
   const [{ value }] = await db

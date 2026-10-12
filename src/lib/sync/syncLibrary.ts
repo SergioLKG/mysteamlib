@@ -1,5 +1,5 @@
 import { and, eq, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
-import { db } from '../db/client';
+import { requireDb } from '../db/client';
 import { achievements, games, users, userAchievements, userGames } from '../db/schema';
 import { getOwnedGames, getPlayerAchievements } from '../steam/webApi';
 import { RateLimiter } from './rateLimiter';
@@ -34,6 +34,7 @@ async function syncOneGame(
   user: { id: string; steamId: string },
   g: OwnedGameLike,
 ): Promise<{ achievementSynced: number; skipped: number }> {
+  const db = requireDb();
   const appid = g.appid;
 
   // No visible stats → nothing to sync per-game; mark done and move on.
@@ -138,7 +139,7 @@ export async function syncLibrary(
   userId: string,
   opts: { force?: boolean } = {},
 ): Promise<SyncResult> {
-  if (!db) throw new Error('Database not configured');
+  const db = requireDb();
 
   const user = await db
     .select({ id: users.id, steamId: users.steamId })
@@ -286,7 +287,7 @@ export async function syncLibraryIncremental(
   userId: string,
   opts: { maxGames?: number; refreshOlderThanMs?: number } = {},
 ): Promise<IncrementalSyncResult> {
-  if (!db) throw new Error('Database not configured');
+  const db = requireDb();
 
   const maxGames = opts.maxGames ?? 12;
   const since = opts.refreshOlderThanMs

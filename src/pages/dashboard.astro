@@ -1,9 +1,10 @@
 ---
 import DashLayout from '../layouts/DashLayout.astro';
-import { db } from '../lib/db/client';
+import { requireDb } from '../lib/db/client';
 import { games, userGames, users } from '../lib/db/schema';
 import { and, eq, sql } from 'drizzle-orm';
 
+const db = requireDb();
 const user = Astro.locals.user!;
 const title = 'Mi Dashboard · mysteamlib';
 const description =
@@ -33,28 +34,28 @@ const stats = {
   platinized: 0,
 };
 
-if (db && profile) {
+if (profile) {
   const g = (
     await db
-      .select({ n: sql`count(*)::int` })
+      .select({ n: sql<number>`count(*)::int` })
       .from(userGames)
       .where(eq(userGames.userId, user.userId))
   )[0];
   const u = (
     await db
-      .select({ n: sql`coalesce(sum(${userGames.achievementsUnlocked}), 0)::int` })
+      .select({ n: sql<number>`coalesce(sum(${userGames.achievementsUnlocked}), 0)::int` })
       .from(userGames)
       .where(eq(userGames.userId, user.userId))
   )[0];
   const h = (
     await db
-      .select({ m: sql`coalesce(sum(${userGames.playtimeMinutes}), 0)::bigint` })
+      .select({ m: sql<string>`coalesce(sum(${userGames.playtimeMinutes}), 0)::bigint` })
       .from(userGames)
       .where(eq(userGames.userId, user.userId))
   )[0];
   const p = (
     await db
-      .select({ n: sql`count(*)::int` })
+      .select({ n: sql<number>`count(*)::int` })
       .from(userGames)
       .innerJoin(games, eq(games.appid, userGames.appid))
       .where(

@@ -2,12 +2,12 @@
 // of results + a few filter/sort combinations so changes are verifiable locally.
 // Usage: node --env-file=.env.local --import tsx scripts/check-platinum.ts [steamId]
 import { eq } from 'drizzle-orm';
-import { db } from '../src/lib/db/client';
+import { requireDb } from '../src/lib/db/client';
 import { users } from '../src/lib/db/schema';
 import { getLibraryGenres, getPlatinumCandidates } from '../src/lib/db/queries/library';
 
 async function main() {
-  if (!db) throw new Error('DATABASE_URL not configured');
+  const db = requireDb();
 
   const steamIdArg = process.argv[2];
   const user = steamIdArg

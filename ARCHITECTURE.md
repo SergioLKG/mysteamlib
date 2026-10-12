@@ -19,7 +19,7 @@ Astro SSR on Vercel (@astrojs/vercel, output: 'server')
        └─ db/
             ├─ queries/ ........... read models (SQL, derived fields, scoring)
             ├─ schema.ts .......... Drizzle schema (source of truth)
-            └─ client.ts .......... Neon HTTP driver (db may be null)
+            └─ client.ts .......... Neon HTTP driver (`db` may be null: use `requireDb()`)
   ▼
 Neon Postgres (us-east-1)        ◄── Vercel crons (daily library, weekly metadata)
 ```

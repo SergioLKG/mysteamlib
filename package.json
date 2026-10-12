@@ -10,6 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "check": "astro check",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -36,6 +37,7 @@
     "es5-ext": true
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "drizzle-kit": "^0.31.10"
   }
 }

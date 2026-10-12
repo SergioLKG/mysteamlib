@@ -17,7 +17,7 @@
  *   node --env-file=.env.local --import tsx scripts/backfill-hltb.ts --limit 20
  */
 import { isNull, lt, or, sql } from 'drizzle-orm';
-import { db } from '../src/lib/db/client';
+import { requireDb } from '../src/lib/db/client';
 import { games, hltbMatches } from '../src/lib/db/schema';
 import { searchGame, HLTB_FUZZY_THRESHOLD } from '../src/lib/hltb/client';
 
@@ -26,10 +26,7 @@ const limitArg = process.argv.indexOf('--limit');
 const LIMIT = limitArg > -1 ? Number(process.argv[limitArg + 1]) : Number.POSITIVE_INFINITY;
 const STALE_BEFORE = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
-if (!db) {
-  console.error('DATABASE_URL not set — aborting.');
-  process.exit(1);
-}
+const db = requireDb();
 
 async function main() {
   const conditions = [isNull(hltbMatches.syncedAt), lt(hltbMatches.syncedAt, STALE_BEFORE)];

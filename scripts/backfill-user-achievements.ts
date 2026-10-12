@@ -11,12 +11,12 @@
 // `library_sync_error` (failed attempts, e.g. after the profile was private)
 // get re-fetched. Combine with mark-stalled-achievements.ts to heal legacy rows.
 import { eq } from 'drizzle-orm';
-import { db } from '../src/lib/db/client';
+import { requireDb } from '../src/lib/db/client';
 import { users } from '../src/lib/db/schema';
 import { syncLibrary } from '../src/lib/sync/syncLibrary';
 
 async function main() {
-  if (!db) throw new Error('DATABASE_URL not configured');
+  const db = requireDb();
 
   const args = process.argv.slice(2);
   const retryOnly = args.includes('--retry-only');

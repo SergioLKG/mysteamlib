@@ -1,5 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { db } from '../db/client';
+import { requireDb } from '../db/client';
 import { games, achievements, hltbMatches } from '../db/schema';
 import { getSchemaForGame, getGlobalAchievementPercentagesForApp } from '../steam/webApi';
 import { getStoreAppDetails } from '../steam/storeApi';
@@ -38,7 +38,7 @@ export async function syncMetadata(
   appids: number[],
   opts: { force?: boolean } = {},
 ): Promise<SyncMetadataResult> {
-  if (!db) throw new Error('Database not configured');
+  const db = requireDb();
   const result: SyncMetadataResult = { processed: 0, gamesUpdated: 0, hltbMatched: 0, failures: 0 };
   let hltbLookups = 0;
 
