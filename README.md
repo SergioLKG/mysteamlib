@@ -1,43 +1,44 @@
-# Astro Starter Kit: Minimal
+# mysteamlib
+
+Personal Steam library utility. Signs in with Steam, syncs your library and achievements, and answers **"which game should I 100 % next?"** with real filters (remaining achievements, global rarity and HowLongToBeat completionist time).
+
+Production: https://mysteamlib.vercel.app
+
+## Stack
+
+Astro 7 (SSR, Vercel adapter) · Svelte 5 islands · Neon Postgres · Drizzle ORM · Steam OpenID · Vercel crons · Node ≥ 24.
+
+## Setup
 
 ```sh
-npm create astro@latest -- --template minimal
+npm install
+cp .env.example .env.local   # fill in the values (never commit .env.local)
+npm run dev                  # http://localhost:4321
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Neon connection string |
+| `STEAM_API_KEY` | Steam Web API key (https://steamcommunity.com/dev/apikey) |
+| `STEAM_OPENID_REALM` | Public origin (`http://localhost:4321` locally) |
+| `SESSION_SECRET` | Long random string used to sign the session cookie |
+| `CRON_SECRET` | Bearer token for `/api/cron/*` |
+| `HLTB_ENABLED`, `HLTB_MIN_INTERVAL_MS` | Optional HowLongToBeat switches |
 
-## 🚀 Project Structure
+## Scripts
 
-Inside of your Astro project, you'll see the following folders and files:
+| Command | What it does |
+|---|---|
+| `npm run dev` / `npm run build` / `npm run preview` | Astro dev server, production build, preview |
+| `npm run astro -- check` | Type-check |
+| `npm run db:generate` | Generate a SQL migration from `src/lib/db/schema.ts` |
+| `npm run db:migrate` | Apply migrations to `DATABASE_URL` |
+| `npm run db:studio` | Drizzle Studio |
+| `node --env-file=.env.local --import tsx scripts/<name>.ts` | Maintenance and backfill scripts (`scripts/`) |
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+## Docs
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): layers, rules and where new code goes.
+- [`AGENTS.md`](AGENTS.md): rules for coding assistants (`CLAUDE.md` links to it).
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+mysteamlib is not affiliated with or endorsed by Valve. Steam data is provided "as is".

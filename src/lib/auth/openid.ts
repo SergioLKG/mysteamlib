@@ -24,6 +24,21 @@ export function buildLoginUrl({ realm, returnTo }: SteamOpenIdParams): string {
 }
 
 /**
+ * The `return_to` Steam echoes back may carry a query string (`?next=…`), so
+ * compare origin + path only. The query is still covered by Steam's signature.
+ */
+function isExpectedReturnTo(received: string | null, expected: string): boolean {
+  if (!received) return false;
+  try {
+    const a = new URL(received);
+    const b = new URL(expected);
+    return a.origin === b.origin && a.pathname === b.pathname;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Verify the OpenID assertion returned by Steam and extract the 64-bit SteamID.
  * Re-posts the params back to Steam with mode=check_authentication.
  */
@@ -45,11 +60,11 @@ export async function verifyOpenIdResponse(
     'openid.op_endpoint': params.get('openid.op_endpoint') ?? '',
     'openid.claimed_id': params.get('openid.claimed_id') ?? '',
     'openid.identity': params.get('openid.identity') ?? '',
-    'openid.return_to': params.get('openid.return_to') ?? returnTo,
+    'openid.return_to': params.get('openid.return_to') ?? '',
     'openid.response_nonce': params.get('openid.response_nonce') ?? '',
   });
 
-  if (validation.get('openid.return_to') !== returnTo) {
+  if (!isExpectedReturnTo(params.get('openid.return_to'), returnTo)) {
     return null;
   }
 

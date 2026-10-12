@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client';
 import { users, userGames, games } from '../db/schema';
 import { syncLibrary, syncLibraryIncremental, type IncrementalSyncResult, type SyncResult } from './syncLibrary';
@@ -37,6 +37,9 @@ export async function runDailySync(cfg: BatchConfig = {}): Promise<unknown> {
   const activeUsers = await db
     .select({ id: users.id, steamId: users.steamId })
     .from(users)
+    // Least recently synced first (never synced = first) so every user rotates
+    // through the daily cap. `last_synced_at` is stamped when a sync completes.
+    .orderBy(sql`${users.lastSyncedAt} asc nulls first`, users.id)
     .limit(config.maxUsers);
 
   const results: { user: string; library: SyncResult | IncrementalSyncResult | null; error?: string }[] = [];

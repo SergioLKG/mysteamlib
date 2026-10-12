@@ -5,6 +5,7 @@ import { db } from '../../../lib/db/client';
 import { users } from '../../../lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { setSession } from '../../../lib/auth/session';
+import { safeNext } from '../../../lib/auth/redirect';
 
 export const prerender = false;
 
@@ -80,6 +81,6 @@ export const GET: APIRoute = async (context) => {
 
   setSession(context, { userId: user.id.toString(), steamId });
 
-  const next = new URL(request.url).searchParams.get('next') ?? '/dashboard';
+  const next = safeNext(params.get('next')) ?? '/dashboard';
   return redirect(next);
 };

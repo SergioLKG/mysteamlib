@@ -1,0 +1,71 @@
+---
+interface Props {
+  /** Keeps the footer inside the same max-width as the page content. */
+  contained?: boolean;
+}
+
+const { contained = true } = Astro.props;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class:list={['footer-inner', { contained }]}>
+    <nav aria-label="Enlaces legales">
+      <a href="/privacidad">Política de privacidad</a>
+      <a href="/terminos">Términos de uso</a>
+    </nav>
+    <p class="note">
+      Proyecto personal sin relación con Valve Corporation ni con Steam. Los datos de tu perfil
+      público se muestran «tal cual».
+    </p>
+    <p class="copyright" translate="no">© {year} mysteamlib</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--border, rgba(148, 163, 184, 0.16));
+    background: rgba(10, 14, 23, 0.6);
+  }
+  .footer-inner {
+    display: grid;
+    gap: 0.7rem;
+    padding: 1.6rem 1.5rem 2rem;
+  }
+  .footer-inner.contained {
+    max-width: min(76rem, calc(100vw - 2rem));
+    margin: 0 auto;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+  }
+  nav a {
+    color: var(--muted, #94a3b8);
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  nav a:hover {
+    color: var(--text, #f1f5f9);
+    text-decoration: underline;
+  }
+  nav a:focus-visible {
+    outline: 2px solid var(--accent, #7c8dff);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  .note {
+    margin: 0;
+    max-width: 44rem;
+    color: var(--muted, #94a3b8);
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+  .copyright {
+    margin: 0;
+    color: var(--muted, #94a3b8);
+    font-size: 0.8rem;
+  }
+</style>

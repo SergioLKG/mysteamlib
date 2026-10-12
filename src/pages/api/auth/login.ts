@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { buildLoginUrl } from '../../../lib/auth/openid';
+import { safeNext } from '../../../lib/auth/redirect';
 
 export const prerender = false;
 
@@ -13,12 +14,9 @@ function baseUrl(): string {
     : 'http://localhost:4321';
 }
 
-const ALLOWED_NEXT = ['/dashboard', '/platino'];
-
 export const GET: APIRoute = ({ request, redirect }) => {
   const realm = baseUrl();
-  const requestedNext = new URL(request.url).searchParams.get('next');
-  const next = ALLOWED_NEXT.includes(requestedNext ?? '') ? requestedNext : null;
+  const next = safeNext(new URL(request.url).searchParams.get('next'));
   const callback = `${realm}/api/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`;
   return redirect(buildLoginUrl({ realm, returnTo: callback }));
 };
