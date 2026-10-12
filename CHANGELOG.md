@@ -7,12 +7,19 @@ The project has not published tagged releases yet, so entries are grouped by mil
 ## [Unreleased]
 
 ### Added
+- Daily Steam API call counter (`steam_api_calls`) with a warning at 70 % and a hard stop at 95 % of the 100,000/day limit.
+- Persistent per-IP rate limit for the profile lookup (`rate_limits`, keyed by an HMAC of the IP, never the raw address).
+- `Cron sync` GitHub Actions workflow that calls the library sync endpoint every 30 minutes.
+- `scripts/db-capacity.ts`: read-only database size report.
 - `npm run check` script (`astro check`) and `@types/node`.
 - Unit tests with `vitest` (`npm test`) for pure logic: difficulty normalization, release-date parsing, profile-input parsing and the `/platino` filter and sort view.
 - GitHub Actions workflow running `npm ci`, `npm run check`, `npm test` and `npm run build` on every push and pull request.
 - `users.last_cron_attempt_at` column so the daily cron rotates through users fairly, whether their last attempt succeeded or failed.
 
 ### Changed
+- `user_achievements` now stores only unlocked achievements (about 10x smaller); locked ones are derived from the catalog. Migration `0005` removes the old locked rows and a redundant index.
+- The profile lookup answers 502/503 with JSON when Steam fails instead of a bare 500.
+- Privacy policy describes the abuse-control data and the more frequent scheduled sync.
 - `requireDb()` and `DatabaseNotConfiguredError` replace the scattered `if (!db)` checks. Cron endpoints now answer 500 with an explicit message instead of 200 `db-not-configured`.
 - `runDailySync` orders users by `last_cron_attempt_at` (nulls first, then `id`) and stamps the column after every attempt.
 - `syncLibraryIncremental` orders pending games by `library_synced_at` (nulls first) so the cron rotates instead of re-fetching the same games.

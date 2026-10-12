@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { runDailySync } from '../../../lib/sync';
 import { isCronAuthorized } from '../../../lib/auth/cron';
+import { purgeRateLimits } from '../../../lib/db/rateLimit';
 
 export const prerender = false;
 
@@ -9,6 +10,7 @@ export const GET: APIRoute = async ({ request }) => {
     return new Response('Unauthorized', { status: 401 });
   }
   try {
+    await purgeRateLimits();
     const result = await runDailySync();
     return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },

@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { requireDb } from '../db/client';
 import { games, achievements, hltbMatches } from '../db/schema';
 import { getSchemaForGame, getGlobalAchievementPercentagesForApp } from '../steam/webApi';
+import './steamBudget';
 import { getStoreAppDetails } from '../steam/storeApi';
 import { RateLimiter } from './rateLimiter';
 import { parseReleaseDate } from './releaseDate';

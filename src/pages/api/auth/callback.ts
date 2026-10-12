@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { verifyOpenIdResponse } from '../../../lib/auth/openid';
 import { getPlayerSummaries } from '../../../lib/steam/webApi';
+import '../../../lib/sync/steamBudget';
 import { db } from '../../../lib/db/client';
 import { users } from '../../../lib/db/schema';
 import { eq } from 'drizzle-orm';

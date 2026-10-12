@@ -96,6 +96,8 @@ export const userGames = pgTable(
   ],
 );
 
+// Only UNLOCKED achievements are stored (decision A8); locked = catalog minus these.
+// The PK prefix (user_id, …) already serves per-user lookups.
 export const userAchievements = pgTable(
   'user_achievements',
   {
@@ -110,7 +112,6 @@ export const userAchievements = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.achievementId] }),
-    index('user_achievements_user_idx').on(t.userId),
     index('user_achievements_achievement_idx').on(t.achievementId),
   ],
 );
@@ -127,4 +128,19 @@ export const hltbMatches = pgTable('hltb_matches', {
     enum: ['exact', 'fuzzy', 'manual_override', 'not_found'],
   }),
   syncedAt: timestamp('synced_at', { withTimezone: true }),
+});
+
+// Fase 9 (D10): Steam Web API calls made per UTC day, to stay under Valve's
+// 100,000/day key limit. One row per day; see lib/sync/steamBudget.ts.
+export const steamApiCalls = pgTable('steam_api_calls', {
+  day: date('day').primaryKey(),
+  calls: integer('calls').default(0).notNull(),
+});
+
+// Fase 9 (D9): fixed-window rate limiter for anonymous endpoints. `key` is
+// `<bucket>:<HMAC of the IP>`, never the IP itself. Stale rows are purged.
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').primaryKey(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  count: integer('count').default(0).notNull(),
 });

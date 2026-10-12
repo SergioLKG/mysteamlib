@@ -6,6 +6,18 @@ interface SteamApiParams {
   [key: string]: string | number | undefined;
 }
 
+/**
+ * Hook awaited before every outgoing Steam request. `lib/steam` must not touch
+ * the DB, so the daily call counter (`lib/sync/steamBudget.ts`) registers
+ * itself here. It may throw `SteamRateLimitError` to refuse the call.
+ */
+type SteamCallGuard = () => Promise<void>;
+let callGuard: SteamCallGuard | null = null;
+
+export function setSteamCallGuard(guard: SteamCallGuard | null): void {
+  callGuard = guard;
+}
+
 function getApiKey(): string {
   if (!API_KEY) {
     throw new Error('STEAM_API_KEY is not configured');
@@ -30,6 +42,7 @@ async function steamRequest<T>(
     }
   }
 
+  if (callGuard) await callGuard();
   const res = await fetch(url);
   if (!res.ok) {
     // Steam returns 429 or x-eresult 25/84 when rate limited
