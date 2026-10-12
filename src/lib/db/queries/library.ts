@@ -1,6 +1,6 @@
 import { and, eq, ilike, isNotNull, sql, type SQL } from 'drizzle-orm';
-import { db } from '../client';
-import { achievements, games, hltbMatches, userAchievements, userGames } from '../schema';
+import { requireDb } from '../client';
+import { games, hltbMatches, userGames } from '../schema';
 import {
   ACHIEVEMENTS_REMAINING_MAX,
   DIFFICULTY_WEIGHTS,
@@ -73,7 +73,7 @@ export async function getPlatinumCandidates(
   filters: PlatinumFilters = {},
   sort: PlatinumSort = { key: 'difficulty' },
 ): Promise<PlatinumCandidate[]> {
-  if (!db) throw new Error('Database not configured');
+  const db = requireDb();
 
   const derived = db.$with('pc_derived').as(
     db
@@ -224,7 +224,7 @@ export async function getPlatinumCandidates(
 
 /** Distinct genres present in the user's achievement-having library, sorted. */
 export async function getLibraryGenres(userId: string): Promise<string[]> {
-  if (!db) throw new Error('Database not configured');
+  const db = requireDb();
 
   const rows = await db
     .select({

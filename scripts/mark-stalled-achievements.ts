@@ -12,25 +12,29 @@
 // Follow up with a non-forced sync so only the flagged games are re-fetched:
 //   node --env-file=.env.local --import tsx scripts/backfill-user-achievements.ts
 // (backfill-user-achievements runs syncLibrary non-force by default.)
-import { db } from '../src/lib/db/client';
+import { sql } from 'drizzle-orm';
+import { requireDb } from '../src/lib/db/client';
 
-const user = (await db.execute('select id, steam_id from users limit 1')).rows[0];
+const db = requireDb();
+
+const user = (await db.execute<{ id: string; steam_id: string }>(sql`select id, steam_id from users limit 1`))
+  .rows[0];
 if (!user) throw new Error('no user found');
 
 const withRows = (
-  await db.execute(
-    `select a.appid from user_achievements ua join achievements a on a.id = ua.achievement_id
-     where ua.user_id = '${user.id}' group by a.appid`,
-  ),
+  await db.execute<{ appid: number }>(
+    sql`select a.appid from user_achievements ua join achievements a on a.id = ua.achievement_id
+        where ua.user_id = ${user.id} group by a.appid`,
+  )
 ).rows;
 const withRowsSet = new Set(withRows.map((r) => r.appid));
 
 const candidates = (
-  await db.execute(
-    `select ug.appid, g.name from user_games ug join games g on g.appid = ug.appid
-     where ug.user_id = '${user.id}' and g.has_achievements and g.total_achievements >= 1
-       and ug.achievements_unlocked = 0`,
-  ),
+  await db.execute<{ appid: number; name: string }>(
+    sql`select ug.appid, g.name from user_games ug join games g on g.appid = ug.appid
+        where ug.user_id = ${user.id} and g.has_achievements and g.total_achievements >= 1
+          and ug.achievements_unlocked = 0`,
+  )
 ).rows;
 
 const stalled = candidates.filter((c) => !withRowsSet.has(c.appid));
@@ -39,8 +43,11 @@ console.log(`[mark-stalled] user=${user.steam_id} stalled=${stalled.length}`, st
 
 if (stalled.length > 0) {
   await db.execute(
-    `update user_games set library_sync_error = 'GetPlayerAchievements: stalled (retry)'
-     where user_id = '${user.id}' and appid in (${stalled.map((s) => s.appid).join(',')})`,
+    sql`update user_games set library_sync_error = 'GetPlayerAchievements: stalled (retry)'
+        where user_id = ${user.id} and appid in (${sql.join(
+          stalled.map((s) => sql`${s.appid}`),
+          sql`, `,
+        )})`,
   );
   console.log('[mark-stalled] flagged for retry');
 }
