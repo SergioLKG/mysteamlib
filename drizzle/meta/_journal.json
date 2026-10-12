@@ -36,6 +36,20 @@
       "when": 1791817008285,
       "tag": "0004_left_killer_shrike",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791825262125,
+      "tag": "0005_late_wildside",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791825730201,
+      "tag": "0006_cheerful_bloodstrike",
+      "breakpoints": true
     }
   ]
 }

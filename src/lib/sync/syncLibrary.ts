@@ -1,7 +1,8 @@
-import { and, eq, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, lt, notInArray, or, sql } from 'drizzle-orm';
 import { requireDb } from '../db/client';
 import { achievements, games, users, userAchievements, userGames } from '../db/schema';
 import { getOwnedGames, getPlayerAchievements } from '../steam/webApi';
+import './steamBudget';
 import { RateLimiter } from './rateLimiter';
 
 export interface SyncResult {
@@ -72,7 +73,10 @@ async function syncOneGame(
   // GetPlayerAchievements returns the full schema list with the achieved flag,
   // so we upsert each row into the shared catalog (idempotent via the
   // (appid, api_name) unique index — self-heals games whose metadata sync
-  // hasn't run yet) and store the user's unlock state in user_achievements.
+  // hasn't run yet).
+  // Fase 9 (decision A8): user_achievements stores ONLY unlocked achievements
+  // (~10 % of the rows). "Locked" is derived as catalog minus unlocked, which is
+  // what the rarity query already does (no row = not unlocked).
   const withApiName = ach.filter((a) => a.apiname);
 
   if (withApiName.length) {
@@ -94,11 +98,11 @@ async function syncOneGame(
     const catalogByApi = new Map(catalog.map((c) => [c.apiName, c.id]));
 
     const unlockRows = withApiName
-      .filter((a) => catalogByApi.has(a.apiname as string))
+      .filter((a) => a.achieved === 1 && catalogByApi.has(a.apiname as string))
       .map((a) => ({
         userId: user.id,
         achievementId: catalogByApi.get(a.apiname as string) as string,
-        unlocked: a.achieved === 1,
+        unlocked: true,
         unlockedAt: a.unlocktime ? new Date(a.unlocktime * 1000) : null,
       }));
 
@@ -108,12 +112,23 @@ async function syncOneGame(
         .values(unlockRows)
         .onConflictDoUpdate({
           target: [userAchievements.userId, userAchievements.achievementId],
-          set: {
-            unlocked: sql`excluded.unlocked`,
-            unlockedAt: sql`excluded.unlocked_at`,
-          },
+          set: { unlockedAt: sql`excluded.unlocked_at` },
         });
     }
+
+    // Drop rows that are no longer unlocked (e.g. the user reset their stats).
+    await db.delete(userAchievements).where(
+      and(
+        eq(userAchievements.userId, user.id),
+        sql`${userAchievements.achievementId} IN (SELECT id FROM achievements WHERE appid = ${appid})`,
+        unlockRows.length
+          ? notInArray(
+              userAchievements.achievementId,
+              unlockRows.map((r) => r.achievementId),
+            )
+          : undefined,
+      ),
+    );
   }
 
   await db

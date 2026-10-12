@@ -1,0 +1,28 @@
+name: Cron sync
+
+# Decision A10: Vercel Hobby runs the library cron once a day. This workflow
+# calls the same endpoint every 30 minutes so users rotate faster (maxUsers is
+# capped per call, so the Steam call budget stays bounded).
+# GitHub disables scheduled workflows after 60 days without repo activity.
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sync-library:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call /api/cron/sync-library
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          APP_URL: ${{ vars.APP_URL || 'https://mysteamlib.vercel.app' }}
+        run: |
+          set -o pipefail
+          curl --fail --silent --show-error --max-time 240 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/cron/sync-library" | head -c 2000
