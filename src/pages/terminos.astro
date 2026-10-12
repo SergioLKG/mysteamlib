@@ -1,0 +1,121 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const title = 'Términos de uso · mysteamlib';
+const heading = 'Términos de uso';
+const description =
+  'Las condiciones para usar mysteamlib: cómo usarla, de quién son los datos de Steam y qué estimamos.';
+
+const CONTACT_EMAIL = 'sergiodp.dev@gmail.com';
+const OWNER_NAME = 'Sergio Domínguez Pérez';
+const COUNTRY = 'España';
+const UPDATED = '10 de septiembre de 2026';
+---
+
+<LegalLayout {title} {heading} {description} updated={UPDATED}>
+  <p>
+    Estos términos explican las reglas de uso de mysteamlib, un proyecto personal y gratuito que
+    organiza tu biblioteca de Steam y te ayuda a elegir tu próximo platino. Al usar el servicio
+    aceptas estas condiciones.
+  </p>
+
+  <p class="callout">
+    <strong>En corto:</strong> conectas tu cuenta con Steam, no damos por hecho que vas a
+    contractual con nadie y los datos de tu perfil público se muestran «tal cual». Si algo no te
+    gusta, deja de usar la web.
+  </p>
+
+  <h2>Qué es mysteamlib</h2>
+  <p>
+    mysteamlib es un servicio web gratuito y sin ánimo de lucro. Resume tu biblioteca de Steam, tu
+    progreso en logros y una estimación de cuánto te falta para platinar cada juego.
+  </p>
+  <p>
+    mysteamlib <strong>no está afiliado, asociado, autorizado ni respaldado por Valve
+    Corporation</strong>. Steam y los nombres e imágenes de los juegos pertenecen a sus respectivos
+    titulares. Usamos el botón oficial «Sign in through Steam» y la documentación de Valve exige no
+    insinuar ningún tipo de respaldo.
+  </p>
+
+  <h2>Acceso y cuenta</h2>
+  <ul>
+    <li>
+      El acceso se hace con <strong>OpenID</strong> de Steam. No hay contraseña de Steam en
+      mysteamlib, y nunca te la pediremos.
+    </li>
+    <li>Para que la web funcione, tu perfil de Steam debe ser público.</li>
+    <li>El botón «Salir» cierra tu sesión en este navegador. Nadie más puede ver tus datos.</li>
+    <li>No compartas tu sesión ni tu enlace de vista previa con quien no quieras que vea tus datos.</li>
+  </ul>
+
+  <h2>Uso permitido</h2>
+  <p>Usa el servicio con sentido común y sin dañar a terceros. Está prohibido:</p>
+  <ul>
+    <li>Hacer consultas masivas o automatizadas para abusar de la web o de las APIs de Valve.</li>
+    <li>Usar el visor de perfiles de la portada para acosar, vigilar o fisgonear el perfil de otra persona.</li>
+    <li>Intentar acceder a datos de perfiles privados o saltarte los controles de acceso.</li>
+    <li>Usar el servicio para infringir derechos de terceros o para publicar contenido ilegal.</li>
+  </ul>
+  <p>
+    Si detectamos abuso, podemos bloquear tu acceso sin previo aviso.
+  </p>
+
+  <h2>Datos de Steam y estimaciones</h2>
+  <ul>
+    <li>
+      Los datos de tu biblioteca, logros y tiempo jugado provienen de Steam y se muestran «tal
+      cual», sin garantizar que estén completos ni actualizados al momento.
+    </li>
+    <li>
+      Los tiempos para completar un juego son <strong>estimaciones</strong> basadas en datos
+      públicos. No son una garantía: no necesariamente reflejan tu velocidad de juego.
+    </li>
+    <li>
+      Si tu perfil es privado o Steam no expone estadísticas de un juego, la web lo indicará con un
+      mensaje honesto en lugar de inventar cifras.
+    </li>
+  </ul>
+
+  <h2>Propiedad intelectual</h2>
+  <p>
+    El código, el diseño, los textos y la marca de mysteamlib pertenecen al propietario. Los juegos,
+    sus títulos, sus imágenes y sus logros pertenecen a Valve y a los estudios que los publican.
+    mysteamlib no reclama ningún derecho sobre ellos, más allá de mostrar la información pública que
+    ya está en Steam.
+  </p>
+
+  <h2>Sin garantía y límite de responsabilidad</h2>
+  <ul>
+    <li>
+      El servicio se ofrece <strong>«tal cual» y «según disponibilidad»</strong>: no prometemos
+      que esté libre de errores ni que funcione de forma ininterrumpida.
+    </li>
+    <li>
+      No respondemos de cambios en la Steam Web API, en la Steam Store API ni en el diseño de
+      OpenID que puedan afectar al servicio.
+    </li>
+    <li>
+      En la medida en que la ley lo permita, la responsabilidad total del propietario se limita a
+      los daños directamente causados y al importe que hayas pagado por el servicio, que es cero.
+    </li>
+  </ul>
+
+  <h2>Cambios en el servicio y en los términos</h2>
+  <p>
+    El propietario puede mejorar, pausar o retirar cualquier parte del servicio. Si cambian estos
+    términos, actualiza la fecha de arriba y, cuando el cambio sea importante, lo anuncia en la
+    web antes de aplicarlo.
+  </p>
+
+  <h2>Legislación aplicable</h2>
+  <p>
+    Estos términos se rigen por la legislación de {COUNTRY}. Cualquier controversia se someterá a
+    los juzgados y tribunales que correspondan según esa legislación.
+  </p>
+
+  <h2>Contacto</h2>
+  <p>
+    Para cualquier duda sobre estos términos, escribe a
+    <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Responsable: {OWNER_NAME}.
+  </p>
+</LegalLayout>

@@ -88,8 +88,13 @@ export async function getPlatinumCandidates(
         achievementsRemaining: sql<number>`(${games.totalAchievements} - ${userGames.achievementsUnlocked})::int`.as('achievementsRemaining'),
         completionPercent: sql<number>`CASE WHEN ${games.totalAchievements} > 0 THEN round((100.0 * ${userGames.achievementsUnlocked}) / ${games.totalAchievements}, 1) ELSE 0.0 END`.as('completionPercent'),
         playtimeMinutes: userGames.playtimeMinutes,
-        estimatedTimeToPlatinum: sql<number | null>`CASE WHEN ${hltbMatches.completionistHours} IS NOT NULL THEN GREATEST(${hltbMatches.completionistHours}::float8 - ${userGames.playtimeMinutes}::float8 / 60.0, 0.0)::float8 ELSE NULL END`.as('estimatedTimeToPlatinum'),
-        hasTimeEstimate: sql<boolean>`(${hltbMatches.completionistHours} IS NOT NULL)`.as('hasTimeEstimate'),
+        // HLTB completionist hours minus what the user already played. A
+        // non-positive result means the estimate is meaningless for this user
+        // (they have already played at least a full-completionist run, or the
+        // community data is off), so it degrades to "Sin dato" instead of a
+        // misleading "~0 h" badge. Nulls always sort last.
+        estimatedTimeToPlatinum: sql<number | null>`CASE WHEN ${hltbMatches.completionistHours} IS NULL THEN NULL WHEN ${hltbMatches.completionistHours}::float8 - ${userGames.playtimeMinutes}::float8 / 60.0 > 0.0 THEN ${hltbMatches.completionistHours}::float8 - ${userGames.playtimeMinutes}::float8 / 60.0 ELSE NULL END`.as('estimatedTimeToPlatinum'),
+        hasTimeEstimate: sql<boolean>`(${hltbMatches.completionistHours} IS NOT NULL AND ${hltbMatches.completionistHours}::float8 - ${userGames.playtimeMinutes}::float8 / 60.0 > 0.0)`.as('hasTimeEstimate'),
         avgGlobalRarityRemaining: sql<number | null>`(
           SELECT avg(a.global_percent)::float8
           FROM achievements a

@@ -1,0 +1,219 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+
+const title = 'Política de privacidad · mysteamlib';
+const heading = 'Política de privacidad';
+const description =
+  'Qué datos de tu cuenta de Steam guarda mysteamlib, para qué los usa, cuánto tiempo los conserva y cómo pedir que los eliminemos.';
+
+const CONTACT_EMAIL = 'sergiodp.dev@gmail.com';
+const OWNER_NAME = 'Sergio Domínguez Pérez';
+const UPDATED = '10 de septiembre de 2026';
+---
+
+<LegalLayout {title} {heading} {description} updated={UPDATED}>
+  <p>
+    mysteamlib guarda datos de tu cuenta de Steam para enseñarte tu biblioteca, tu progreso en
+    logros y qué juego te queda más cerca del 100&nbsp;%. En esta página verás exactamente qué
+    guardamos, dónde vive y cómo pedir su eliminación.
+  </p>
+
+  <p class="callout">
+    <strong>En corto:</strong> guardamos tu SteamID, tu nombre de perfil y tu progreso en juegos.
+    No guardamos tu contraseña, tu correo ni los datos de perfiles privados. No vendemos ni cedemos
+    tus datos, y puedes pedir que los borremos cuando quieras.
+  </p>
+
+  <h2>Responsable del tratamiento</h2>
+  <p>
+    Responsable: {OWNER_NAME} («el propietario» a partir de aquí). Contacto:
+    <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>. Si vives en la Unión Europea o en el
+    Espacio Económico Europeo, esta política aplica el Reglamento (UE) 2016/679 (RGPD).
+  </p>
+
+  <h2>Qué datos guardamos</h2>
+  <p>
+    Solo guardamos Steam Data que tú decides conectar al iniciar sesión con Steam, y únicamente si
+    tu perfil es público. El inventario completo es este:
+  </p>
+
+  <table>
+    <tbody>
+      <tr>
+        <th scope="row">Tu cuenta</th>
+        <td>
+          SteamID64, nombre de perfil de Steam, URL de tu avatar, si tu perfil es público o
+          privado, fecha de alta y fecha de tu última sincronización.
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Tu biblioteca</th>
+        <td>
+          Los juegos que tienes (identificador de cada juego), minutos jugados en total y en los
+          últimos 15 días, cuántos logros has desbloqueado en cada juego, cuándo jugaste por última
+          vez, cuándo se sincronizó cada juego y el mensaje de error si una consulta a Steam falló
+          (por ejemplo, un perfil privado).
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Tus logros</th>
+        <td>Qué logros tienes desbloqueados y en qué fecha los desbloqueaste, juego por juego.</td>
+      </tr>
+      <tr>
+        <th scope="row">Catálogo común de juegos</th>
+        <td>
+          No es personal: nombre del juego, géneros, etiquetas, fecha de salida, imagen de
+          cabecera, si tiene logros, cuántos logros tiene y qué porcentaje de jugadores de Steam lo
+          desbloqueó. Además, para estimar cuánto falta para platinar, consultamos
+          <a href="https://howlongtobeat.com/" target="_blank" rel="noopener noreferrer">HowLongToBeat</a>
+          con el nombre público del juego y guardamos sus horas de historia principal y su tiempo de
+          completista. Es información pública del juego, no tuya. Este catálogo lo comparten todos los
+          usuarios del servicio.
+        </td>
+      </tr>
+      <tr>
+        <th scope="row">Cómo lo pido</th>
+        <td>
+          Tu Steam Data se consulta a Valve a través de la Steam Web API y la Steam Store API en
+          estos momentos: al terminar la importación de tu biblioteca (justo después de conectar
+          la cuenta), al entrar en tu lista de platinos si lleva más de 6&nbsp;h sin actualizar, al
+          pulsar «Actualizar datos», al refrescar un juego concreto y mediante una tarea programada
+          diaria para tu biblioteca y semanal para el catálogo de juegos.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Qué datos no guardamos</h2>
+  <ul>
+    <li>Tu contraseña de Steam. La petición de acceso pasa por OpenID y nunca pasa por nosotros.</li>
+    <li>Tu correo electrónico, tu lista de amigos, tus mensajes, tus compras ni tu saldo.</li>
+    <li>
+      Datos de perfiles privados: si tu perfil es privado, no podemos leer tu biblioteca y te lo
+      decimos en pantalla.
+    </li>
+    <li>
+      Datos del visor de perfiles de la portada: al buscar un perfil público ahí solo mostramos
+      nombre, avatar, número de juegos y horas. Nada de esa consulta se guarda.
+    </li>
+  </ul>
+
+  <h2>Para qué usamos los datos y con qué base legal</h2>
+  <p>Usamos tus datos con un único fin: prestarte el servicio que tú decides usar.</p>
+  <ul>
+    <li>
+      <strong>Interés legítimo</strong>: conectarte con Steam y mostrarte tu biblioteca, tu
+      progreso y tus candidatos a platino, tal como pediste al iniciar sesión.
+    </li>
+    <li>
+      <strong>Interés legítimo</strong>: mantener el catálogo común de juegos actualizado con
+      información pública de Valve.
+    </li>
+    <li>
+      <strong>Obligación legal</strong>: conservar registros técnicos mínimos si una autoridad nos
+      los pide.
+    </li>
+  </ul>
+  <p>
+    Tu SteamID, tu nombre de perfil y tu avatar no se usan para publicidad, perfiles de marketing
+    ni decisiones automatizadas que produzcan efectos jurídicos sobre ti.
+  </p>
+
+  <h2>Cookies y technologies similares</h2>
+  <p>Usamos una sola cookie, y no sirve para seguirte por la web:</p>
+  <ul>
+    <li>
+      <strong><code>mysteam_session</code></strong>: mantiene tu sesión iniciada durante 30 días. La
+      marca como <code>httpOnly</code> (tu navegador no la enseña al JavaScript) y
+      <code>SameSite=Lax</code>. El botón «Salir» la borra al momento.
+    </li>
+  </ul>
+  <p>
+    No usamos cookies publicitarias, cookies de seguimiento entre sitios ni píxeles de terceros.
+  </p>
+
+  <h2>Analítica y rendimiento</h2>
+  <p>
+    La web usa Vercel Web Analytics y Vercel Speed Insights, de Vercel. Recogen métricas agregadas
+    de visitas y rendimiento (páginas vistas, tiempos de carga). No identifican tu cuenta, no
+    guardan cookies publicitarias y no comparten datos con anunciantes. Vercel actúa como
+    encargado del tratamiento y trata esos datos conforme a su propio acuerdo de encargado del
+    tratamiento, que puede incluir el noreste de Estados Unidos como lugar de procesamiento.
+  </p>
+
+  <h2>Dónde se guardan tus datos</h2>
+  <ul>
+    <li>
+      <strong>Neon</strong> (Postgres serverless) almacena la base de datos en la región
+      <code>us-east-1</code> de AWS (Virginia, Estados Unidos).
+    </li>
+    <li>
+      <strong>Vercel</strong> ejecuta la aplicación y aloja sus registros técnicos. El proyecto no
+      fija una región personalizada, así que usa la región por defecto de Vercel.
+    </li>
+    <li>
+      <strong>Valve Corporation</strong> es el origen de los datos: los recibimos de
+      <code>api.steampowered.com</code> y <code>store.steampowered.com</code>.
+    </li>
+  </ul>
+  <p>
+    Si resides en el Espacio Económico Europeo, ten en cuenta que estos proveedores tratan tus
+    datos fuera de ese espacio por su propio diseño. No usamos ninguna otra herramienta que
+    transfiera datos al extranjero.
+  </p>
+
+  <h2>Cuánto tiempo conservamos los datos</h2>
+  <ul>
+    <li>
+      <strong>Tus datos de cuenta y progreso</strong>: mientras uses el servicio. Pides su
+      eliminación y los borramos de la base de datos en un máximo de 30 días.
+    </li>
+    <li>
+      <strong>El catálogo común de juegos</strong>: permanece mientras el servicio exista, porque
+      no identifica a ninguna persona.
+    </li>
+    <li>
+      <strong>Registros técnicos de Vercel</strong> (pueden incluir tu SteamID y contadores de
+      sincronización): los conserva Vercel según la retención de su plan, no los controlamos.
+    </li>
+  </ul>
+
+  <h2>Tus derechos sobre tus datos</h2>
+  <p>Puedes pedirnos, sin coste:</p>
+  <ul>
+    <li>Saber qué datos tuyos tenemos y recibir una copia.</li>
+    <li>Corregir datos inexactos.</li>
+    <li>Borrar tus datos (derecho de supresión o «derecho al olvido»).</li>
+    <li>Oponerte a un tratamiento o limitarlo.</li>
+    <li>Recibir tus datos en un formato legible por máquina.</li>
+  </ul>
+  <p>
+    Escríbelo a <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> desde la misma cuenta de
+    Steam que usaste. Respondemos en un máximo de 30 días.
+  </p>
+
+  <h2>Seguridad</h2>
+  <p>
+    Limitamos quién accede a los datos: solo el propietario del proyecto y su base de datos, con
+    contraseña. La clave de la Steam Web API vive en variables de entorno del servidor y nunca
+    llega al navegador. Las sesiones usan cookie <code>httpOnly</code> y el tráfico viaja por HTTPS.
+  </p>
+
+  <h2>Menores de edad</h2>
+  <p>
+    El servicio es para mayores de 13 años, la edad mínima para crear una cuenta de Steam en la
+    Unión Europea. Si tienes menos, no uses el servicio ni nos envíes datos.
+  </p>
+
+  <h2>Cambios en esta política</h2>
+  <p>
+    Si cambiamos esta política, actualizamos la fecha de arriba. Un cambio importante también se
+    anuncia en la web antes de aplicarse.
+  </p>
+
+  <h2>Contacto</h2>
+  <p>
+    Para cualquier duda sobre privacidad, escribe a
+    <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+  </p>
+</LegalLayout>

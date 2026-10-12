@@ -5,10 +5,10 @@ import { getSchemaForGame, getGlobalAchievementPercentagesForApp } from '../stea
 import { getStoreAppDetails } from '../steam/storeApi';
 import { RateLimiter } from './rateLimiter';
 
-// v1.0: HLTB integration is DEFERRED to 1.1 (see ../.opencode/docs/04). The
-// hltb_matches table and this code path stay ready, but we do not hit the
-// fragile HLTB scraper at runtime yet. Flip to true when 1.1 ships.
-const HLTB_ENABLED = false;
+// HLTB integration: enabled by default since Fase 5 (10/09/2026). It is an
+// unofficial scrape, so it can be switched off without a deploy with the env
+// var HLTB_ENABLED=false, and every failure degrades to "Sin dato".
+const HLTB_ENABLED = process.env.HLTB_ENABLED !== 'false';
 
 export interface SyncMetadataResult {
   processed: number;
@@ -21,6 +21,8 @@ const steamLimiter = new RateLimiter(500); // ~2 requests/s
 const storeLimiter = new RateLimiter(300);
 
 const HLTB_REFRESH_DAYS = 90;
+// Serverless runs must not spend their whole budget on HLTB lookups.
+const MAX_HLTB_PER_RUN = 4;
 
 /**
  * Sync catalog metadata for a set of appids: Store details (genres, release,
@@ -38,6 +40,7 @@ export async function syncMetadata(
 ): Promise<SyncMetadataResult> {
   if (!db) throw new Error('Database not configured');
   const result: SyncMetadataResult = { processed: 0, gamesUpdated: 0, hltbMatched: 0, failures: 0 };
+  let hltbLookups = 0;
 
   for (const appid of appids) {
     result.processed += 1;
@@ -114,6 +117,12 @@ export async function syncMetadata(
 
     // --- HLTB match (cached, refreshed sparingly) ---
     if (HLTB_ENABLED) {
+      if (hltbLookups >= MAX_HLTB_PER_RUN) {
+        // Each lookup is a sequential external request (~1s throttle). A cap per
+        // run keeps a serverless invocation well inside its timeout; the local
+        // `scripts/backfill-hltb.ts` is what drains the bulk backlog.
+        continue;
+      }
       const { searchGame } = await import('../hltb/client');
       const [existing] = await db
         .select({ syncedAt: hltbMatches.syncedAt })
@@ -133,6 +142,7 @@ export async function syncMetadata(
         .limit(1);
       if (!gameRow?.name || gameRow.name === String(appid)) continue;
 
+      hltbLookups += 1;
       const match = await searchGame(gameRow.name); // never throws
       await db
         .insert(hltbMatches)

@@ -11,7 +11,7 @@
 // These are product decisions, kept as clear constants — adjust freely.
 export const DIFFICULTY_WEIGHTS = {
   achievements: 1.0,
-  rarity: 0.7,
+  rarity: 0.5,
   time: 0.5,
 } as const;
 

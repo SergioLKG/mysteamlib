@@ -1,60 +1,72 @@
-# AGENTS.md (./app)
+# AGENTS.md (app/ — git repo root)
 
-Astro web app for **mysteamlib** — personal Steam library utility ("what to play", "what to platinum next"). This is the git repo root; product docs and roadmap live one level up (`../AGENTS.md`, `../.opencode/docs/`, `../ROADMAP.md`) — read those for the project briefing, build order, and open decisions.
+> `CLAUDE.md` is a symlink to this file. Keep it **under 100 lines**: hard rules + pointers only. No progress logs here — history goes to the changelog.
 
-## Commands (run from here, `./app`)
-- `npm run dev` — dev server (foreground). Background mode: `npm run astro -- dev --background`.
-- `npm run build` — production build (verify before committing).
-- `npm run astro -- <cmd>` — pass through to Astro CLI (e.g. `npm run astro -- add svelte`).
+**mysteamlib**: personal Steam library utility. Main feature: "Mi próximo platino" (`/platino`), which ranks the games that are best to 100 % next. Production: https://mysteamlib.vercel.app
 
-## Closing a phase / milestone — always end with "Tareas para el dev:"
-After finishing a phase or reaching a clean breakpoint (`punto y aparte`) at the end of a development session, the assistant MUST close its reply with a `Tareas para el dev:` block listing the concrete steps the developer (the owner) must do next. These are actions the agent needs to continue, or decisions/tests the developer must review. If there is genuinely nothing left for the developer to do, write something like `Escribir "continuar"` to signal the next session can proceed. Keep the list short, concrete, and ordered.
+## Read first
 
-## Stack (locked)
-Astro SSR on Vercel (adapter) · Postgres **Neon** · **Drizzle** ORM · Steam OpenID auth · **Svelte** islands · Vercel cron 1×/day · Node 24.
+| What | Where |
+|---|---|
+| Architecture, layer rules, where new code goes | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Setup and commands | [`README.md`](README.md) |
+| Full product docs (Spanish, **owner's local machine only**, outside the repo) | `../docs/README.md` → code map, data model, sync, auth, features, decisions, tech debt, changelog |
+| Phase status | `../ROADMAP.md` (local only) |
 
-## Skills (see `../.opencode/docs/SKILLS.md`)
-Project-installed skills in `./.agents/skills/`: `astro`, `svelte-core-bestpractices`, `neon-drizzle`. Key rules:
-- **Load `svelte-core-bestpractices` when writing/editing Svelte components** and `web-design-guidelines` when building/auditing UI (owner wants *feel-first*, smooth, attention-grabbing interfaces); `writing-guidelines` for UI copy/messages/legal text; `astro` for pages/config.
-- ⚠️ **`neon-drizzle`** can embed DB credentials/connection strings verbatim (Snyk HIGH W007). **Golden rule: credentials/DATABASE_URL live ONLY in `.env.local` (and Vercel env vars); code/migrations/configs reference `process.env.DATABASE_URL`, never inline credentials.**
-- `vercel-react-best-practices` is React/Next-only → does NOT apply (Astro+Svelte). Others (`vercel-optimize`, `find-skills`, `customize-opencode`) are on-demand.
+If `../docs/` is missing (fresh clone), rely on `ARCHITECTURE.md` and the code itself.
 
-## Rules
-- Never hand-write Vercel `functions`/`rewrites`/`routes` in `vercel.json` (breaks the Astro Vercel adapter → 405). Only `crons` allowed.
-- Server endpoints live in `src/pages/api/*.ts` only (no root `/api`). Dynamic endpoints need `export const prerender = false;`.
-- Never call Steam/Store/HLTB APIs at page-render time — DB only, refreshed by sync jobs (idempotent, resumable, batched).
-- Code and comments in English; product docs (`../.opencode/docs/`) stay in Spanish.
+## Commands (run from `app/`)
 
-## Steam API compliance (Valve TOS — `../.opencode/docs/STEAM-API-TERMS.md`)
-- **100k calls/day** limit. Track usage in sync jobs; personal project is well under budget but always document the ceiling.
-- Only retrieve Steam Data **as requested by the end user**. No prefetch without consent.
-- Must publish a **privacy policy** listing what Steam Data is stored and where (country).
-- API key stays in env vars only; never committed, never exposed client-side.
-- Use **Steam OpenID** for auth; never ask for or store Steam passwords.
-- Do **not** imply Valve/Steam endorsement. Use official "Sign in through Steam" buttons only.
-- Data provided "as is" — disclaimers in UI for estimates (e.g. HLTB times).
+- `npm run dev`: dev server on :4321. `npm run build`: production build.
+- `npm run astro -- check`: type-check (cheapest verification).
+- `npm run db:generate`: SQL migration from `src/lib/db/schema.ts`. `npm run db:migrate` targets the **production** DB: **only with explicit owner approval**.
+- Local scripts: `node --env-file=.env.local --import tsx scripts/<name>.ts [flags]`. They hit the **real** DB.
 
-## Current state (09 sep 2026)
-- **Fase 1 cerrada.** Deploy en producción: `https://mysteamlib.vercel.app`, `/api/health` → `{"status":"ok","db":"connected"}`.
-- Neon DB connected via Vercel Storage (`DATABASE_URL` + `POSTGRES_*` env on Vercel, mirrored in `.env.local`). `STEAM_API_KEY` + `SESSION_SECRET` set on Vercel + `.env.local`.
-- Drizzle wired: `src/lib/db/schema.ts` (7 tables: `health_check`, `users`, `games`, `achievements`, `user_games`, `user_achievements`, `hltb_matches`), `src/lib/db/client.ts`, `drizzle.config.ts`, migrations in `drizzle/` (0001, 0002 applied to Neon). Scripts: `db:generate/migrate/push/studio`.
-- `BaseLayout.astro` (in `src/layouts/`) integrates `@vercel/analytics` + `@vercel/speed-insights`. Required for all pages.
-- **Fase 2 CERRADA (09 sep 2026)** — login Steam end-to-end ✅, sync jobs ✅, backfill metadata 359/359 ✅, catálogo `achievements` 24.9k sin duplicados. Detalles:
-  - Steam wrappers: `src/lib/steam/webApi.ts` (`getOwnedGames`, `getPlayerAchievements`, `getSchemaForGame`, `getGlobalAchievementPercentagesForApp`, `getPlayerSummaries`) y `storeApi.ts` (`getStoreAppDetails`, backoff 429).
-  - **HLTB — DIFERIDO a v1.1** (decisión propietario 03 sep: investigar/posible fork de `hltb-client` y adaptarlo). `src/lib/hltb/client.ts` usa `hltb-client` solo como **base de investigación — NO es dependencia fijada ni activada**. Sync escrito para que un fallo/ausencia de HLTB **nunca bloquee** (marca `not_found`, sigue). Feature `03` funciona sin tiempos HLTB en v1.0.
-- **Auth OpenID**: `src/lib/auth/openid.ts` (login URL + `check_authentication`), `src/lib/auth/session.ts` (HMAC cookie via `SESSION_SECRET`, 30d); endpoints `api/auth/login|callback|logout`; `src/middleware.ts` protects `/dashboard`, `/platino`, `/sync` + `api/games/*`, `api/sync/*` **y puebla `context.locals.user` en TODAS las rutas** cuando hay sesión válida (así la home renderiza el header logado; decodificar el HMAC por request es barato). Callback maps Steam `communityvisibilitystate` (3=público) → `users.profile_visibility`. `api/auth/login` acepta `?next=` validado (allowlist `/dashboard`, `/platino`) para login→destino directo.
-- **Sync**: `src/lib/sync/` — `syncLibrary` (idempotente, resumible via `library_synced_at`; **desde migración `0003` (09/09) auto-reintento**: si un intento de logros falla se anota en `user_games.library_sync_error` y el siguiente cron **lo reintenta automáticamente**; el error se limpia al éxito — arregla de raíz el caso "perfil privado al sincronizar → 403 → nunca se curaba". Sir Brante 1272160 seguirá 403 PERMANENTE: Steam no da stats de juegos nunca jugados) + **`syncLibraryIncremental` (09/09, changelog (13))**: sync por tandas (máx `maxGames`=12) con modes **fill** (nuevos/errores) y **refresh** (`refreshOlderThanMs`: re-pull de logros caducados, e.g. 6h visita / 24h cron), reusa `syncOneGame` (lógica por-juego extraída) y encola metadata de juegos nuevos del catálogo. `syncMetadata` (Store+schema+global% + HLTB **disabled**, cached 90d, not_found never blocks; `parseReleaseDate()` sanitiza `release_date` ante texto libre tipo "To be announced"), `runDailySync`/**`runMetadataSync`**/`refreshGame` (batched; **cron diario rota refresh 40 juegos/usr/día, umbral 24h**); cron endpoints `api/cron/sync-library|sync-metadata`; `api/games/[appid]/refresh.ts` (protected); **`api/sync/library.ts`** (protected, `no-store`): una tanda del incremental para el usuario logado (primera vez → fill, si no refresh 6h) + metadata de juegos nuevos; crons in `vercel.json` (03:00 daily, Mon 04:00). Rate limiter in `lib/sync/rateLimiter.ts`. **Desde Fase 3 (09/09): `syncLibrary` TAMBIÉN rellena `user_achievements`** (estado unlock por logro desde `GetPlayerAchievements`, catalog upsert autocurativo) — decisión propietario que revierte el "per-usuario minimalista" de Fase 2; migración de datos existentes vía `scripts/backfill-user-achievements.ts` (forced, idempotente; `--retry-only` = sync no forzado para los marcados con error). El cron diario NO repuebla lo ya sincronizado (solo rota refresh por umbral de edad).
-  - **Primera carga (09/09)**: usuarios sin `last_synced_at` son redirigidos por los gates de `/dashboard` y `/platino` a la **pasarela `/sync`** (isla `SyncRunner` con UI animada: anillo %, pasos, retry) que llama por tandas a `POST /api/sync/library` hasta `done` y vuelve al destino (`?from=` allowlist `/dashboard|/platino`). **Frescura ≤6h**: `/platino` auto-refresca en segundo plano si `last_synced_at` tiene >6h; el botón "Actualizar datos" hace refresh real de Steam (antes solo releía la BD). Caché: endpoint de platinos `private, max-age=300` + `Vary: Cookie` (navegador 5 min); el HTML de páginas no se cachea en CDN.
-  - **Backfill script**: `scripts/backfill-metadata.ts` (local, `tsx`, no serverless timeout; loop idempotente/resumible + anti-infinite-loop guard). Reusable: `node --env-file=.env.local --import tsx scripts/backfill-metadata.ts [--force]`.
-  - **Logging**: sync jobs + orchestrators emit `console.log` JSON summaries (`[sync-library]`, `[sync-metadata]`, `[syncLibrary]`, `[syncMetadata]`) visible in Vercel logs so cron results/import counts are traceable.
-  - **Frontend (v1 pulida 09/09)**: **headers comunes en `SiteHeader.astro`** (dos variantes: **logada** → logo + nav + **chip avatar+nombre clickeable → `/dashboard`** + logout; **anónima** → logo + enlaces a herramientas con **icono de candado** + **botón oficial "Sign in through Steam" arriba a la derecha**). `index.astro` (**home útil 09/09, changelog (14)**: hero 2 cols = pitch + tarjeta de **lookup público** `ProfileLookup.svelte`; input de perfil Steam → `POST /api/profiles/lookup` (resuelve URL/vanity/steamid64, stats públicas Juegos+Horas+top-5 — nunca perfiles privados, rate-limit 10/min/IP, `no-store`, sin BD), secciones "Así de fácil" (3 pasos), "Qué te llevas al entrar" (4 perks ligados a features) y "Sin letra pequeña rara" (trust + disclaimer Valve); variante logada con CTAs directos), `dashboard.astro` (**Mi Dashboard**: hub logado con perfil (avatar/persona/steamid en la ficha), stats (juegos/logros/platinados/horas) y tarjetas de acceso a herramientas; `DashLayout.astro` = tema+header compartido), `platino.astro` (**Mi próximo platino**: la feature de `03`, página protegida con la isla), logout POST `/api/auth/logout`. **`api/auth/login` soporta `?next=` validado** (allowlist `/dashboard` · `/platino`) para login→destino directo. **Tono**: primera persona en áreas logadas, tuteo informal en landing — guía en `../.opencode/docs/06-TONO-Y-VOZ.md`. Sticky del header compensado con `--header-h` + `scroll-margin-top` + sticky del sidebar de filtros desplazado.
-  - Env additions: `CRON_SECRET` (optional bearer for cron); `.env.example` recreated. `.env.local` needs `CRON_SECRET` too if set.
-- **Estado tras CERRAR Fase 2**: ambos crons limpios — `sync-metadata` → `processed=0` (catálogo completo, mantenimiento no-op), `sync-library` → `skipped=359` (todo sincronizado; diario solo 1 llamada). **Siguiente: Fase 3** ("qué platinarse ahora").
-- **ESTADO ACTUAL — FASE 3 CERRADA (09/09) — v1.0 en producción.** Decisiones propiedad: pesos `difficulty_score` = logros 1.0 · rareza 0.7 · tiempo 0.5 (`src/lib/db/queries/difficulty.ts`); poblar `user_achievements`; solo login. **Implementado/validado por el propietario tras deploy** ("funciona muy bien"):
-  - `src/lib/db/queries/library.ts` — `getPlatinumCandidates(userId, filters, sort)` (contra SQL via CTE; derivados `achievements_remaining`, `completion_percent`, `estimated_time_to_platinum`, `avg_global_rarity_remaining` por subquery correlacionada sobre `user_achievements`; base: `has_achievements` + `total_achievements>0` + ocultar 100% salvo `showCompleted`; nulls de tiempo SIEMPRE al final) + `getLibraryGenres(userId)`.
-  - Endpoint GET `src/pages/api/games/platinum-candidates.ts` (protegido; devuelve **el set completo del usuario** `{ games, meta: { availableGenres } }` con `Cache-Control: private, max-age=300` + `Vary: Cookie` — cacheable solo en el navegador, nunca en CDN; `no-store` NO aplica: el filtrado es cliente).
-  - Isla Svelte 5 `src/components/LibraryExplorer.svelte` (runes; **fetch-once en onMount + filtrado/orden reactivo en cliente** con `$derived.by` replicando la semántica exacta de `library.ts`: state unplayed/started/completed, showCompleted, min-max logros y horas, includeNoTime, género exacto, búsqueda case-insensitive, **nulls siempre al final** + tiebreak de nombre; URL sincronizada con `$effect`; *skeleton* shimmer en la carga inicial con `aria-busy`/`aria-live` y `prefers-reduced-motion`; botón "Actualizar datos") montada en `src/pages/platino.astro` (**Mi próximo platino**: hero + isla). Svelte 5.57 instalado (`@astrojs/svelte`). **Motivo**: 1 sola llamada por visita, 0 al mover filtros, filtrado instantáneo sin spinner de filtros (decisión `04`, matiz a la regla "filtrar en SQL, no en JS" en `03` — base + derivados + `difficulty_score` siguen en SQL).
-  - Scripts dev: `scripts/check-platinum.ts` (valida la query contra la BD real), `scripts/backfill-user-achievements.ts` (con `--retry-only`) y `scripts/mark-stalled-achievements.ts` (detecta juegos con logros en catálogo pero 0 filas en `user_achievements` → los marca para reintento).
-  - **Data heal 09/09**: los 2 juegos que daban 403 (Krunker + Sir Brante) eran perfiles privados. Krunker quedó **1/1 (platino)** tras la re-sync; **Sir Brante 403 es PERMANENTE** (Steam no expone stats de juegos nunca jugados) y es lo esperado. Migración `0003` (`library_sync_error`) en `drizzle/` aplicada a Neon → reintento automático en el cron.
-  - **IA + tono 09/09**: `/dashboard` = hub Mi Dashboard; `/platino` = la feature; middleware protege ambos (ver flip 09/09 más arriba en "Auth"). Tono definido en `06-TONO-Y-VOZ.md`.
-  - **Pendiente (v1.1, NO bloquea — ver `.opencode/docs/04`):** ajuste de pesos del `difficulty_score` con datos reales, pulido visual restante (2ª tanda de juice, stats del Dashboard ampliables), HLTB (investigar/fork de `hltb-client`). **v1.1 QoL 09/09 (implementado, pendiente deploy+validación)**: `FiltersPanel.svelte` con filtros en **sidebar sticky (PC) / modal (móvil**, Esc/backdrop/inert/aria-modal, badge de filtros activos) + **enlace a la tienda Steam** por fila + **juice** (stagger de entrada, empty state con icono, focus-visible, skeleton fiel a la tarjeta real). **v1.1 rediseño `/platino` (changelog (12), build ✅)**: cards verticales tipo banner con **badges en esquina** (Faltan · tiempo `~Nh` si hay dato · dificultad con borde de color), **sello "Platinado"** + fondo/borde platino para 100% (sin badge de dificultad), **barra gruesa con el % dentro** (`role="progressbar"` + `aria-valuenow/min/max` + conteo `X/Y`), filtros full-width con **sliders de doble punto** (`DualRange.svelte`: Logros restantes 0–150, Tiempo 0–500h paso 5, clamps cruzados), **dirección asc/desc como botón-icono** en la esquina de la lista Y en la cabecera del panel (fuera del select), **"Limpiar filtros" como botón real**, página a `min(96rem, 100vw-2rem)` y grid `auto-fill minmax(360px,1fr)`, **SEO/a11y** (`description` prop en `BaseLayout`/`DashLayout` + meta description en home/platino/dashboard). Features de backlog (`04`/`05`) solo a petición explícita del propietario.
+## Stack (locked; do not reopen)
+
+Astro 7 SSR + `@astrojs/vercel` (Hobby) · Svelte 5 islands (runes) · Neon Postgres (HTTP driver) · Drizzle ORM · Steam OpenID + HMAC cookie · Vercel crons (max 1×/day) · Node ≥24. Free tiers only: never propose paid services.
+
+## Hard rules
+
+1. **Never call Steam / Store / HLTB at page-render time.** DB first, filled by sync jobs (`src/lib/sync`). The only exception is the public profile lookup (no DB writes).
+2. Sync jobs are **idempotent, resumable and batched**: the serverless timeout can kill any run.
+3. `vercel.json` = **`crons` only**. Never `functions`/`rewrites`/`routes` (they break the adapter → 405).
+4. Endpoints only in `src/pages/api/**` with `export const prerender = false;`. No root `/api`.
+5. New private route → add it to `src/middleware.ts`. Use `locals.user.userId`, never a client-supplied id.
+6. Data queries filter, sort and aggregate in **SQL** (`src/lib/db/queries`). Exception: `/platino` filters client-side; keep `LibraryExplorer`'s `buildView` and `library.ts` semantically identical.
+7. Unknown data is `null` ("Sin dato"), sorted last. Never invent numbers.
+8. Product formulas and tunables are **named constants** (e.g. `DIFFICULTY_WEIGHTS` in `queries/difficulty.ts`).
+9. Schema or cookie changes → review the legal pages (`privacidad.astro`, `terminos.astro`); their text is derived from `schema.ts`.
+10. Before adding any third-party wrapper (especially HLTB), **verify it works against the real service** and check its maintenance status.
+
+## Secrets
+
+**Golden rule: credentials/DATABASE_URL live ONLY in `.env.local` (and Vercel env vars); code/migrations/configs reference `process.env.DATABASE_URL`, never inline credentials.** Same for `STEAM_API_KEY`, `SESSION_SECRET` and `CRON_SECRET`: server-side only, never in islands, never logged. Template: `.env.example`.
+
+## Steam API compliance (Valve terms)
+
+- 100,000 calls/day per key. Keep sync batches bounded and document the call budget.
+- Fetch Steam data only **as requested by the user**. No unsolicited prefetching.
+- Keep the privacy policy accurate: what is stored and where (Neon `us-east-1`).
+- OpenID only. Never ask for or store Steam passwords. Official "Sign in through Steam" button.
+- Do not imply Valve endorsement. Show "as is" disclaimers for estimates (HLTB).
+
+## Skills (local, in `.agents/skills/`, symlinked from `.claude/skills/`; git-excluded)
+
+- `svelte-core-bestpractices`: **always** when writing or reviewing `.svelte`.
+- `astro`: pages, endpoints, config.
+- `neon-drizzle` ⚠️: schema and migrations. It may try to inline credentials (Snyk W007); the golden rule above wins.
+- If available: `web-design-guidelines` for any UI (owner wants *feel-first*, smooth, accessible UI) and `writing-guidelines` for UI copy and legal text.
+
+## Language and tone
+
+- Code, identifiers, comments and commits in **English** (Conventional Commits for new work).
+- UI copy in **Spanish**: first person ("Mi …") only in titles and CTAs; body text neutral, using informal "tú"; legal pages formal. Brand always lowercase: "mysteamlib".
+
+## Working agreement
+
+- Don't commit, push or run migrations unless the owner asks.
+- Features marked as backlog (e.g. "Resoluciones de Año Nuevo", public `/platino` by URL) are **only built on explicit request**.
+- Open product decisions are proposed with a default and confirmed by the owner, never fixed silently.
+- When a phase ends or the session reaches a clean breakpoint, end the reply with a **`Tareas para el dev:`** block: short, ordered, concrete. If there is nothing pending, write `Escribir "continuar"`.
+- After changing code, update the matching doc in `../docs/` (mapping table in `../docs/README.md`).
