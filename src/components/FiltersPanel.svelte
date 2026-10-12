@@ -1,22 +1,6 @@
 <script lang="ts">
   import DualRange from './DualRange.svelte';
-
-  interface Filters {
-    search: string;
-    progress: string;
-    showCompleted: boolean;
-    achievementsMin: number;
-    achievementsMax: number;
-    timeMin: number;
-    timeMax: number;
-    includeNoTime: boolean;
-    genre: string;
-    sort: string;
-    direction: string;
-  }
-
-  const ACH_MAX = 150;
-  const TIME_MAX = 500;
+  import { ACH_MAX, TIME_MAX, type Filters } from '../lib/platinum/view';
 
   // `filters` is the reactive $state object owned by LibraryExplorer; controls
   // mutate its fields in place so the parent's derived view updates instantly.

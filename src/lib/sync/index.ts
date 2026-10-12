@@ -56,9 +56,11 @@ export async function runDailySync(cfg: BatchConfig = {}): Promise<DailySyncSumm
   const activeUsers = await db
     .select({ id: users.id, steamId: users.steamId })
     .from(users)
-    // Least recently synced first (never synced = first) so every user rotates
-    // through the daily cap. `last_synced_at` is stamped when a sync completes.
-    .orderBy(sql`${users.lastSyncedAt} asc nulls first`, users.id)
+    // Least recently attempted first (never attempted = first) so every user
+    // rotates through the daily cap, even those whose sync never reaches `done`
+    // (huge or private libraries). `last_synced_at` is not used here: it is only
+    // stamped on completion and feeds the first-load gate and the /platino refresh.
+    .orderBy(sql`${users.lastCronAttemptAt} asc nulls first`, users.id)
     .limit(config.maxUsers);
 
   const results: DailySyncUserResult[] = [];
@@ -78,6 +80,7 @@ export async function runDailySync(cfg: BatchConfig = {}): Promise<DailySyncSumm
       console.error(`Daily sync failed for user ${u.steamId}`, e);
       results.push({ user: u.steamId, library: null, error: (e as Error).message });
     }
+    await db.update(users).set({ lastCronAttemptAt: new Date() }).where(eq(users.id, u.id));
   }
 
   const summary: DailySyncSummary = { ok: true, users: activeUsers.length, results };

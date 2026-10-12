@@ -18,7 +18,7 @@ If `../docs/` is missing (fresh clone), rely on `ARCHITECTURE.md` and the code i
 ## Commands (run from `app/`)
 
 - `npm run dev`: dev server on :4321. `npm run build`: production build.
-- `npm run astro -- check`: type-check (cheapest verification).
+- `npm run check`: type-check (cheapest verification). `npm test`: vitest, pure logic only (no DB, no network).
 - `npm run db:generate`: SQL migration from `src/lib/db/schema.ts`. `npm run db:migrate` targets the **production** DB: **only with explicit owner approval**.
 - Local scripts: `node --env-file=.env.local --import tsx scripts/<name>.ts [flags]`. They hit the **real** DB.
 
@@ -33,7 +33,7 @@ Astro 7 SSR + `@astrojs/vercel` (Hobby) · Svelte 5 islands (runes) · Neon Post
 3. `vercel.json` = **`crons` only**. Never `functions`/`rewrites`/`routes` (they break the adapter → 405).
 4. Endpoints only in `src/pages/api/**` with `export const prerender = false;`. No root `/api`.
 5. New private route → add it to `src/middleware.ts`. Use `locals.user.userId`, never a client-supplied id.
-6. Data queries filter, sort and aggregate in **SQL** (`src/lib/db/queries`). Exception: `/platino` filters client-side; keep `LibraryExplorer`'s `buildView` and `library.ts` semantically identical.
+6. Data queries filter, sort and aggregate in **SQL** (`src/lib/db/queries`). Exception: `/platino` filters client-side; keep `buildView` (`src/lib/platinum/view.ts`) and `library.ts` semantically identical.
 7. Unknown data is `null` ("Sin dato"), sorted last. Never invent numbers.
 8. Product formulas and tunables are **named constants** (e.g. `DIFFICULTY_WEIGHTS` in `queries/difficulty.ts`).
 9. Schema or cookie changes → review the legal pages (`privacidad.astro`, `terminos.astro`); their text is derived from `schema.ts`.

@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
 import { getOwnedGames, getPlayerSummaries, resolveVanityUrl } from '../../../lib/steam/webApi';
+import { parseProfileInput } from '../../../lib/steam/profileInput';
 
 export const prerender = false;
-
-const STEAMID_RE = /^\d{17}$/;
 
 // Abuse guard for an anonymous endpoint: simple sliding-window per-IP
 // limiter. Serverside instances are ephemeral on Vercel, but for a personal
@@ -25,33 +24,15 @@ function rateLimited(ip: string): boolean {
 }
 
 /**
- * Parse a Steam profile URL / vanity / raw steamID64 into a SteamID64 string.
- * Returns null when the input is not recognized (not an error: the caller
- * decides whether to try the vanity resolution).
+ * Resolve what the visitor pasted into a SteamID64. Returns null when the
+ * input is not recognized (not an error: the caller answers 400).
  */
 async function resolveSteamId(input: string): Promise<string | null> {
-  const raw = input.trim();
-  if (STEAMID_RE.test(raw)) return raw;
-
-  let url: URL;
-  try {
-    url = new URL(raw.includes('://') ? raw : `https://steamcommunity.com/${raw.replace(/^\/+/, '')}`);
-  } catch {
-    return null;
-  }
-  if (!url.hostname.endsWith('steamcommunity.com')) return null;
-
-  const segs = url.pathname.split('/').filter(Boolean);
-  if (segs[0] === 'profiles' && segs[1]) {
-    return STEAMID_RE.test(segs[1]) ? segs[1] : null;
-  }
-  if (segs[0] === 'id' && segs[1]) {
-    const res = await resolveVanityUrl(segs[1]);
-    return res.response?.success === 1 && res.response.steamid ? res.response.steamid : null;
-  }
-  // Bare URL forms: steamcommunity.com\/profiles\/<id> or /id/<vanity> handled
-  // above; anything else (apps, valvestats…) is not a profile.
-  return null;
+  const parsed = parseProfileInput(input);
+  if (!parsed) return null;
+  if (parsed.kind === 'steamid') return parsed.steamId;
+  const res = await resolveVanityUrl(parsed.vanity);
+  return res.response?.success === 1 && res.response.steamid ? res.response.steamid : null;
 }
 
 export type ProfileLookupPayload =

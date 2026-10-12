@@ -353,7 +353,9 @@ export async function syncLibraryIncremental(
     .from(userGames)
     .innerJoin(games, eq(games.appid, userGames.appid))
     .where(pendingCondition(user[0].id, since))
-    .orderBy(userGames.appid)
+    // Least recently synced first (never synced = first) so a capped cron run
+    // rotates through the library instead of re-pulling the lowest appids.
+    .orderBy(sql`${userGames.librarySyncedAt} asc nulls first`, userGames.appid)
     .limit(maxGames);
 
   let processed = 0;
