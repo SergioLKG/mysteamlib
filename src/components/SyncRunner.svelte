@@ -175,7 +175,7 @@
       radial-gradient(circle at center, transparent 58%, transparent 59%),
       conic-gradient(
         from 0deg,
-        var(--accent, #7c8dff) calc(var(--pct, 0) * 1%),
+        var(--accent, var(--color-accent)) calc(var(--pct, 0) * 1%),
         rgba(148, 163, 184, 0.18) calc(var(--pct, 0) * 1%)
       );
     animation: breathe 2.1s ease-in-out infinite;
@@ -187,7 +187,7 @@
     place-items: center;
     border-radius: 50%;
     background: var(--bg, #0a0e17);
-    color: var(--accent, #7c8dff);
+    color: var(--accent, var(--color-accent));
   }
   .pct-num {
     font-size: 1.05rem;
@@ -208,10 +208,7 @@
     font-size: clamp(1.5rem, 4vw, 2rem);
     letter-spacing: -0.02em;
     text-wrap: balance;
-    background: linear-gradient(90deg, #a5b4fc, #e0a3e3);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--color-accent-text);
   }
   .lede {
     margin: 0;
@@ -266,13 +263,13 @@
     background: color-mix(in srgb, var(--surface, #0f1420) 70%, #000);
   }
   .steps li.active .dot {
-    border-color: var(--accent, #7c8dff);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #7c8dff) 22%, transparent);
+    border-color: var(--accent, var(--color-accent));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--color-accent)) 22%, transparent);
   }
   .steps li.done .dot {
     border-color: transparent;
-    background: linear-gradient(135deg, #7c8dff, #b06ab3);
-    color: #fff;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
+    color: var(--color-on-accent);
   }
   .step-count {
     font-variant-numeric: tabular-nums;
@@ -284,8 +281,8 @@
     font-size: 0.9rem;
     padding: 0.6rem 1.4rem;
     border-radius: 10px;
-    border: 1px solid var(--accent, #7c8dff);
-    background: color-mix(in srgb, var(--accent, #7c8dff) 14%, transparent);
+    border: 1px solid var(--accent, var(--color-accent));
+    background: color-mix(in srgb, var(--accent, var(--color-accent)) 14%, transparent);
     color: var(--text, #f1f5f9);
     cursor: pointer;
     transition: filter 0.15s ease, transform 0.15s ease;
@@ -294,7 +291,7 @@
     filter: brightness(1.12);
   }
   .retry:focus-visible {
-    outline: 2px solid var(--accent, #7c8dff);
+    outline: 2px solid var(--accent, var(--color-accent));
     outline-offset: 2px;
   }
 

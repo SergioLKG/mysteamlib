@@ -122,7 +122,7 @@
     top: 7px;
     height: 6px;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--accent, #7c8dff), var(--accent-2, #b06ab3));
+    background: linear-gradient(90deg, var(--accent, var(--color-accent)), var(--accent-2, var(--color-accent-hover)));
   }
 
   .range {
@@ -159,7 +159,7 @@
     margin-top: -5px;
     border-radius: 50%;
     background: #eef1ff;
-    border: 3px solid var(--accent, #7c8dff);
+    border: 3px solid var(--accent, var(--color-accent));
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     cursor: grab;
   }
@@ -173,7 +173,7 @@
     height: 12px;
     border-radius: 50%;
     background: #eef1ff;
-    border: 3px solid var(--accent, #7c8dff);
+    border: 3px solid var(--accent, var(--color-accent));
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     cursor: grab;
   }

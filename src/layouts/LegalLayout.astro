@@ -23,8 +23,8 @@ const { title, heading, description, updated, user = Astro.locals.user } = Astro
       --text: #f1f5f9;
       --muted: #94a3b8;
       --border: rgba(148, 163, 184, 0.16);
-      --accent: #7c8dff;
-      --accent-2: #b06ab3;
+      --accent: var(--color-accent);
+      --accent-2: var(--color-accent-hover);
       --header-h: 3.875rem;
     }
     body {
@@ -90,10 +90,10 @@ const { title, heading, description, updated, user = Astro.locals.user } = Astro
     margin-bottom: 0.45rem;
   }
   .legal :global(a) {
-    color: var(--accent, #7c8dff);
+    color: var(--accent, var(--color-accent));
   }
   .legal :global(a:focus-visible) {
-    outline: 2px solid var(--accent, #7c8dff);
+    outline: 2px solid var(--accent, var(--color-accent));
     outline-offset: 3px;
     border-radius: 4px;
   }

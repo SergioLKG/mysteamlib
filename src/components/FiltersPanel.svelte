@@ -188,7 +188,7 @@
     transition: border-color 0.15s ease, background 0.15s ease;
   }
   .dir-toggle:hover {
-    border-color: var(--accent, #7c8dff);
+    border-color: var(--accent, var(--color-accent));
   }
   .dir-label {
     font-variant-numeric: tabular-nums;
@@ -223,8 +223,8 @@
   input[type='search']:focus-visible,
   select:focus-visible {
     outline: none;
-    border-color: var(--accent, #7c8dff);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #7c8dff) 25%, transparent);
+    border-color: var(--accent, var(--color-accent));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, var(--color-accent)) 25%, transparent);
   }
 
   .range-group {
@@ -247,7 +247,7 @@
     line-height: 1.3;
   }
   .check input {
-    accent-color: var(--accent, #7c8dff);
+    accent-color: var(--accent, var(--color-accent));
     flex: none;
   }
 
@@ -271,8 +271,8 @@
     border: 1px solid var(--border, rgba(148, 163, 184, 0.28));
   }
   .reset:not(:disabled):hover {
-    border-color: var(--accent, #7c8dff);
-    background: color-mix(in srgb, var(--accent, #7c8dff) 12%, transparent);
+    border-color: var(--accent, var(--color-accent));
+    background: color-mix(in srgb, var(--accent, var(--color-accent)) 12%, transparent);
   }
   .reset:disabled {
     opacity: 0.45;
@@ -293,7 +293,7 @@
 
   .dir-toggle:focus-visible,
   .btn:focus-visible {
-    outline: 2px solid var(--accent, #7c8dff);
+    outline: 2px solid var(--accent, var(--color-accent));
     outline-offset: 2px;
   }
 
