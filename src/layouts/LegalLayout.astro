@@ -44,7 +44,7 @@ const { title, heading, description, updated, user = Astro.locals.user } = Astro
     }
   </style>
 
-  <SiteHeader {user} page="home" />
+  <SiteHeader {user} loginGlyph={false} />
 
   <main id="main-content" class="legal">
     <header class="legal-head">

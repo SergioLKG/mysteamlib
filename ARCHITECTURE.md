@@ -67,6 +67,7 @@ Shared **catalog** (`games`, `achievements`, `hltb_matches`) is synced once per 
 | A new scheduled job           | function in `lib/sync/index.ts` + `pages/api/cron/<name>.ts` (Bearer `CRON_SECRET`) + `crons` entry in `vercel.json` (Hobby: max 1×/day) |
 | A bulk/one-off data fix       | `scripts/<name>.ts` (idempotent, resumable, `--force`/`--limit` style flags)                                                             |
 | Interactive UI                | Svelte 5 island (runes; `$derived` over `$effect`), hydrated with `client:load` only where needed                                        |
+| Colour, type, space, motion   | tokens in `src/styles/tokens.css` (rules in `DESIGN.md`); components reference tokens by name, never inline values |
 | Shared UI chrome              | `src/components/*.astro`                                                                                                                 |
 
 ## 6. Target evolution (known gaps → direction)

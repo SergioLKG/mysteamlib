@@ -14,7 +14,7 @@ const from = new URL(Astro.request.url).searchParams.get('from');
 const fromAllowed = from === '/dashboard' || from === '/platino' ? from : '/dashboard';
 ---
 
-<DashLayout {title} {description} page="sync" user={user}>
+<DashLayout {title} {description} user={user}>
   <main id="main-content">
     <SyncRunner client:load from={fromAllowed} />
   </main>

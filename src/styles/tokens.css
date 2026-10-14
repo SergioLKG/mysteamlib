@@ -1,0 +1,145 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 */
+/* Hallmark · design system: mysteamlib · genre: modern-minimal · theme: custom (studied from two boards)weights
+ * DNA-source: image (dark board + light board) · locked by app/DESIGN.md
+ *
+ * Single source of truth for colour, type, space, radius, motion and elevation.
+ * Components reference these tokens by name: no inline colours or font-family.
+ * Imported by `BaseLayout.astro` since 2026-10-14. Phases 11 and 12 migrate the
+ * pages off the legacy `--bg/--surface/--accent…` variables (mapping table in DESIGN.md).
+ *
+ * Themes: colours use light-dark(light, dark). `color-scheme` picks the side:
+ *   - default: dark (the product's original look)
+ *   - OS prefers light: light
+ *   - <html data-theme="light|dark">: explicit user choice, wins over the OS
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* ---- Fonts (self-hosted, @fontsource-variable/plus-jakarta-sans) ---- */
+  --font-sans:
+    "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --font-display: var(--font-sans);
+
+  /* ---- Colour: surfaces (navy ink / warm paper) ---- */
+  --color-bg: light-dark(oklch(93.9% 0.019 83), oklch(15.8% 0.024 241));
+  --color-surface: light-dark(oklch(96.5% 0.016 86), oklch(19.4% 0.027 245));
+  --color-surface-2: light-dark(oklch(90.9% 0.025 83), oklch(22.8% 0.033 246));
+  --color-border: light-dark(oklch(82% 0.012 83), oklch(25.7% 0.031 243));
+  --color-border-strong: light-dark(
+    oklch(77.4% 0.004 174),
+    oklch(49% 0.035 244)
+  );
+
+  /* ---- Colour: text ---- */
+  --color-text: light-dark(oklch(21.4% 0.065 254), oklch(99.2% 0.005 78));
+  --color-text-body: light-dark(oklch(34.9% 0.057 251), oklch(82.2% 0.029 247));
+  --color-text-muted: light-dark(
+    oklch(44.2% 0.034 257),
+    oklch(70.3% 0.032 244)
+  );
+
+  /* ---- Colour: accent (ember amber). One accent only. ---- */
+  --color-accent: light-dark(oklch(65.5% 0.138 59), oklch(76.2% 0.135 60));
+  --color-accent-hover: light-dark(
+    oklch(60.6% 0.137 54),
+    oklch(80.4% 0.129 62)
+  );
+  --color-on-accent: light-dark(oklch(21.4% 0.065 254), oklch(18% 0.03 245));
+  --color-accent-text: light-dark(oklch(50% 0.13 50), oklch(80.4% 0.129 62));
+  --color-accent-soft: light-dark(
+    oklch(65.5% 0.138 59 / 0.14),
+    oklch(76.2% 0.135 60 / 0.14)
+  );
+  --color-focus: light-dark(oklch(50% 0.13 50), oklch(80.4% 0.129 62));
+
+  /* ---- Colour: status (difficulty chips, sync states, errors) ---- */
+  --color-ok: light-dark(oklch(45% 0.11 155), oklch(78% 0.14 155));
+  --color-warn: light-dark(oklch(50% 0.11 85), oklch(82% 0.13 90));
+  --color-danger: light-dark(oklch(48% 0.17 25), oklch(72% 0.15 25));
+
+  /* ---- Type scale (fluid; headings roman, never italic) ---- */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --text-3xl: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+  --text-display: clamp(2.5rem, 1.5rem + 4.6vw, 4.75rem);
+  --leading-tight: 1.08;
+  --leading-snug: 1.3;
+  --leading-body: 1.6;
+  --tracking-display: -0.025em;
+  --tracking-eyebrow: 0.14em;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-display: 800;
+
+  /* ---- Space (4 px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 6.5rem;
+  --space-gutter: clamp(1rem, 0.5rem + 2.5vw, 2rem);
+  --measure: 62ch;
+  --container: 72rem;
+  --header-h: 3.875rem;
+
+  /* ---- Radius ---- */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-pill: 999px;
+
+  /* ---- Elevation (dark: soft ember glow; light: soft navy shadow) ---- */
+  --shadow-card: light-dark(
+    0 1px 2px oklch(21.4% 0.065 254 / 0.06),
+    0 0 0 1px oklch(25.7% 0.031 243 / 0.6)
+  );
+  --shadow-pop: light-dark(
+    0 12px 32px oklch(21.4% 0.065 254 / 0.14),
+    0 16px 40px oklch(0% 0 0 / 0.5)
+  );
+  --glow-accent: light-dark(
+    0 6px 20px oklch(65.5% 0.138 59 / 0.35),
+    0 0 32px oklch(76.2% 0.135 60 / 0.35)
+  );
+
+  /* ---- Motion ---- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 360ms;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}

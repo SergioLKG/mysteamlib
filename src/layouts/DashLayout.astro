@@ -10,11 +10,10 @@ interface SessionUser {
 interface Props {
   title: string;
   description?: string;
-  page: 'dashboard' | 'platino' | 'sync';
   user: SessionUser;
 }
 
-const { title, description, page, user } = Astro.props;
+const { title, description, user } = Astro.props;
 ---
 
 <BaseLayout {title} {description}>
@@ -53,7 +52,7 @@ const { title, description, page, user } = Astro.props;
     }
   </style>
 
-  <SiteHeader {user} {page} />
+  <SiteHeader {user} />
 
   <slot />
 </BaseLayout>

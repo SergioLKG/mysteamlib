@@ -1,0 +1,144 @@
+---
+// Decorative hero art: a shelf of game "spines" with exactly one amber "platinum"
+// spine (DESIGN.md, Imagery). Pure CSS, tokens only, hidden from assistive tech.
+import Icon from './Icon.astro';
+
+// [height %, relative width, surface]. Static layout, no data. Width is a flex weight, so the
+// row always fits its column (no clipped spines) instead of a fixed rem width.
+const PLATINUM_INDEX = 4;
+const spines: Array<[number, number, 'solid' | 'outline' | 'halftone']> = [
+  [72, 1.6, 'solid'],
+  [92, 2.0, 'halftone'],
+  [64, 1.4, 'outline'],
+  [80, 1.8, 'solid'],
+  [90, 2.5, 'solid'], // platinum
+  [68, 1.6, 'halftone'],
+  [96, 2.1, 'outline'],
+  [76, 1.5, 'solid'],
+  [60, 1.9, 'halftone'],
+  [86, 1.7, 'outline'],
+  [70, 2.2, 'solid'],
+  [94, 1.5, 'halftone'],
+  [66, 1.8, 'outline'],
+  [82, 2.0, 'solid'],
+];
+---
+
+<div class="shelf" aria-hidden="true">
+  {
+    spines.map(([h, w, surface], i) => (
+      <span
+        class:list={['spine', surface, { platinum: i === PLATINUM_INDEX }]}
+        style={`--h:${h}; --w:${w}; --i:${i};`}
+      >
+        {i === PLATINUM_INDEX && <Icon name="trophy" size={16} />}
+      </span>
+    ))
+  }
+</div>
+
+<style>
+  .shelf {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-1);
+    block-size: 6.5rem;
+    padding-block-start: var(--space-5);
+    padding-inline: var(--space-4);
+    border-block-end: 2px solid var(--color-border-strong);
+    /* Visible on purpose: the platinum glow must not be clipped. */
+  }
+
+  .spine {
+    position: relative;
+    flex: var(--w) 1 0;
+    min-inline-size: 0;
+    block-size: calc(var(--h) * 1%);
+    border: 1px solid var(--color-border);
+    border-block-end: 0;
+    border-start-start-radius: var(--radius-sm);
+    border-start-end-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    animation: spine-rise var(--duration-slow) var(--ease-out) backwards;
+    animation-delay: calc(var(--i) * 40ms);
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base) var(--ease-out);
+  }
+
+  /* Title band near the top, like a game case. */
+  .spine::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 12%;
+    block-size: 0.3rem;
+    background: var(--color-border-strong);
+  }
+
+  .spine.outline {
+    background: var(--color-surface);
+    border-color: var(--color-border-strong);
+  }
+
+  /* Halftone dots in the body text tone: navy ink on paper by day, soft grey on navy by night. */
+  .spine.halftone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(var(--color-text-muted) 0.8px, transparent 1.3px);
+    background-size: 6px 6px;
+    opacity: 0.35;
+  }
+
+  .spine.platinum {
+    display: grid;
+    align-content: end;
+    justify-items: center;
+    padding-block-end: var(--space-3);
+    background: var(--color-accent);
+    border-color: var(--color-accent-hover);
+    box-shadow: var(--glow-accent);
+    color: var(--color-on-accent);
+  }
+  .spine.platinum::before {
+    background: var(--color-on-accent);
+    opacity: 0.35;
+  }
+
+  /* Hover only: the shelf is decorative (aria-hidden), so it takes no focus. */
+  @media (hover: hover) {
+    .shelf:hover .spine.platinum {
+      box-shadow:
+        var(--glow-accent),
+        0 0 3rem color-mix(in srgb, var(--color-accent) 45%, transparent);
+    }
+    .spine:hover {
+      transform: translateY(-0.4rem);
+    }
+  }
+
+  @keyframes spine-rise {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .shelf {
+      block-size: 15rem;
+      padding-inline: var(--space-5);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spine {
+      animation: none;
+      transition: box-shadow var(--duration-base) var(--ease-out);
+    }
+    .spine:hover {
+      transform: none;
+    }
+  }
+</style>

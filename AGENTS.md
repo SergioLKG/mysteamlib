@@ -9,6 +9,7 @@
 | What | Where |
 |---|---|
 | Architecture, layer rules, where new code goes | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
+| Design system (colour, type, themes, motion, anti-patterns) | [`DESIGN.md`](DESIGN.md) + `src/styles/tokens.css` |
 | Setup and commands | [`README.md`](README.md) |
 | Full product docs (Spanish, **owner's local machine only**, outside the repo) | `../docs/README.md` → code map, data model, sync, auth, features, decisions, tech debt, changelog |
 | Phase status | `../ROADMAP.md` (local only) |
@@ -37,7 +38,8 @@ Astro 7 SSR + `@astrojs/vercel` (Hobby) · Svelte 5 islands (runes) · Neon Post
 7. Unknown data is `null` ("Sin dato"), sorted last. Never invent numbers.
 8. Product formulas and tunables are **named constants** (e.g. `DIFFICULTY_WEIGHTS` in `queries/difficulty.ts`).
 9. Schema or cookie changes → review the legal pages (`privacidad.astro`, `terminos.astro`); their text is derived from `schema.ts`.
-10. Before adding any third-party wrapper (especially HLTB), **verify it works against the real service** and check its maintenance status.
+10. UI follows `DESIGN.md`: colours, fonts, radii and motion come from `src/styles/tokens.css` tokens, never inline hex or `font-family`; check both themes.
+11. Before adding any third-party wrapper (especially HLTB), **verify it works against the real service** and check its maintenance status.
 
 ## Secrets
 

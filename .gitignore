@@ -31,3 +31,5 @@ pnpm-debug.log*
 skills-lock.json
 *.lock
 .mcp.json
+# Hallmark project memory (local)
+.hallmark/
