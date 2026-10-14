@@ -8,7 +8,7 @@ const description =
 
 const CONTACT_EMAIL = 'sergiodp.dev@gmail.com';
 const OWNER_NAME = 'Sergio Domínguez Pérez';
-const UPDATED = '12 de octubre de 2026';
+const UPDATED = '14 de octubre de 2026';
 ---
 
 <LegalLayout {title} {heading} {description} updated={UPDATED}>
@@ -135,13 +135,19 @@ const UPDATED = '12 de octubre de 2026';
     ni decisiones automatizadas que produzcan efectos jurídicos sobre ti.
   </p>
 
-  <h2>Cookies y technologies similares</h2>
-  <p>Usamos una sola cookie, y no sirve para seguirte por la web:</p>
+  <h2>Cookies y tecnologías similares</h2>
+  <p>Usamos una cookie y una entrada de localStorage, y ninguna sirve para seguirte por la web:</p>
   <ul>
     <li>
       <strong><code>mysteam_session</code></strong>: mantiene tu sesión iniciada durante 30 días. La
       marca como <code>httpOnly</code> (tu navegador no la enseña al JavaScript) y
-      <code>SameSite=Lax</code>. El botón «Salir» la borra al momento.
+      <code>SameSite=Lax</code>. El botón «Cerrar sesión» la borra al momento.
+    </li>
+    <li>
+      <strong><code>mysteamlib-theme</code></strong> (localStorage): guarda tu preferencia de tema,
+      con el valor <code>light</code> o <code>dark</code>. No contiene datos personales y no sale de
+      tu navegador: no se envía a nuestros servidores. Si no eliges tema, la web usa el de tu
+      sistema y no se guarda nada. Puedes borrarla desde los ajustes de tu navegador.
     </li>
   </ul>
   <p>

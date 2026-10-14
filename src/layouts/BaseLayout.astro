@@ -2,26 +2,47 @@
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import '@fontsource-variable/plus-jakarta-sans';
+import '../styles/tokens.css';
+import { THEME_COLOR } from '../lib/ui/theme-colors';
 
 interface Props {
   title?: string;
   description?: string;
   /** Legal pages set it to false to get a full-width footer. */
   containedFooter?: boolean;
+  /**
+   * true = page already uses the design tokens: follows the OS theme or the saved choice.
+   * false (default, legacy pages) = pinned to dark until the page is migrated (Phases 11/12).
+   */
+  themed?: boolean;
 }
 
-const { title = 'mysteamlib', description, containedFooter = true } = Astro.props;
+const { title = 'mysteamlib', description, containedFooter = true, themed = false } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme={themed ? undefined : 'dark'}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="theme-color" content="#0a0e17" />
+    {themed ? (
+      <>
+        <meta name="theme-color" content={THEME_COLOR.dark} media="(prefers-color-scheme: dark)" />
+        <meta name="theme-color" content={THEME_COLOR.light} media="(prefers-color-scheme: light)" />
+        <script is:inline>
+          try {
+            var t = localStorage.getItem('mysteamlib-theme');
+            if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+          } catch (e) {}
+        </script>
+      </>
+    ) : (
+      <meta name="theme-color" content={THEME_COLOR.legacy} />
+    )}
     <link rel="preconnect" href="https://media.steampowered.com" crossorigin />
     <link rel="preconnect" href="https://avatars.steamstatic.com" crossorigin />
     <link rel="preconnect" href="https://community.fastly.steamstatic.com" crossorigin />
@@ -45,8 +66,8 @@ const { title = 'mysteamlib', description, containedFooter = true } = Astro.prop
     z-index: 100;
     padding: 0.6rem 1rem;
     border-radius: 0 0 10px 0;
-    background: var(--accent, #7c8dff);
-    color: #0a0e17;
+    background: var(--accent, var(--color-accent));
+    color: var(--color-on-accent);
     font-weight: 700;
     text-decoration: none;
   }

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
+
   interface TopGame {
     appid: number;
     name: string;
@@ -44,12 +46,12 @@
       });
       const data = (await res.json()) as LookupOk | LookupErr;
       if (!res.ok || !data.ok) {
-        throw new Error((data as LookupErr).error ?? 'No he podido leer ese perfil.');
+        throw new Error((data as LookupErr).error ?? 'No se pudo leer ese perfil.');
       }
       result = data;
       phase = 'done';
     } catch (err) {
-      error = err instanceof Error ? err.message : 'No he podido leer ese perfil.';
+      error = err instanceof Error ? err.message : 'No se pudo leer ese perfil.';
       phase = 'done';
       result = null;
     }
@@ -64,7 +66,7 @@
   <form class="idle-form" onsubmit={lookup}>
     <label class="field-label" for="profile-input">
       Tu perfil de Steam
-      <span class="hint">URL completa, tu nick de vanity o el SteamID64</span>
+      <span class="hint">URL, nick o SteamID64</span>
     </label>
     <div class="field-row">
       <input
@@ -114,7 +116,9 @@
             <div class="who-info">
               <p class="persona">{result.personaName}</p>
               <a class="steam-link" href={result.profileUrl} target="_blank" rel="noopener noreferrer">
-                Ver perfil en Steam ↗
+                Ver perfil en Steam
+                <Icon name="external-link" size={14} />
+                <span class="sr-only">(se abre en una pestaña nueva)</span>
               </a>
             </div>
           </div>
@@ -122,11 +126,11 @@
           <dl class="stat-tiles">
             <div class="tile">
               <dt>Juegos</dt>
-              <dd>{result.gamesCount ?? '—'}</dd>
+              <dd>{result.gamesCount ?? 'Sin dato'}</dd>
             </div>
             <div class="tile">
               <dt>Horas jugadas</dt>
-              <dd>{result.totalHours !== undefined ? formatHours(result.totalHours) : '—'}</dd>
+              <dd>{result.totalHours !== undefined ? formatHours(result.totalHours) : 'Sin dato'}</dd>
             </div>
           </dl>
 
@@ -142,25 +146,21 @@
               {/each}
             </ol>
           {:else}
-            <p class="lookup-msg">No he encontrado horas jugadas en este perfil.</p>
+            <p class="lookup-msg">Este perfil no tiene horas jugadas.</p>
           {/if}
         </div>
 
         <div class="cta-box">
           <p>
-            <strong>Esto es solo el aperitivo.</strong> Con tu cuenta verás el estado de cada logro,
-            tu progreso por juego y —sobre todo— <em>el próximo que te conviene platinar</em>.
+            <strong>Esto es solo el aperitivo.</strong> Con tu cuenta ves el estado de cada logro y
+            qué juego conviene platinar primero.
           </p>
           {#if user}
-            <a class="steam-sign-in" href={ctaHref}>Ir a mi dashboard</a>
+            <a class="dash-cta" href={ctaHref}>Ir a mi dashboard</a>
           {:else}
-            <a class="steam-sign-in" href={ctaHref} title="Iniciar sesión con Steam">
-              <img
-                src="https://community.fastly.steamstatic.com/public/images/signinthroughsteam/sits_01.png"
-                alt="Sign in through Steam"
-                width="180"
-                height="35"
-              />
+            <a class="dash-cta" href={ctaHref}>
+              <Icon name="steam" size={18} />
+              Iniciar sesión con Steam
             </a>
           {/if}
         </div>
@@ -174,7 +174,9 @@
             <div class="who-info">
               <p class="persona">{result.personaName}</p>
               <a class="steam-link" href={result.profileUrl} target="_blank" rel="noopener noreferrer">
-                Ver perfil en Steam ↗
+                Ver perfil en Steam
+                <Icon name="external-link" size={14} />
+                <span class="sr-only">(se abre en una pestaña nueva)</span>
               </a>
             </div>
           </div>
@@ -191,68 +193,102 @@
 <style>
   .lookup {
     display: grid;
-    gap: 1rem;
+    gap: var(--space-4);
+    font-family: var(--font-sans);
+    color: var(--color-text-body);
   }
   .idle-form {
     display: grid;
-    gap: 0.55rem;
+    gap: var(--space-2);
   }
   .field-label {
-    display: grid;
-    gap: 0.2rem;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text, #f1f5f9);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    font-size: var(--text-base);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
   }
   .hint {
-    font-size: 0.78rem;
-    font-weight: 400;
-    color: var(--muted, #94a3b8);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    color: var(--color-text-muted);
   }
   .field-row {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--space-2);
   }
   .lookup-input {
     flex: 1;
     min-width: 0;
-    padding: 0.7rem 0.9rem;
-    border-radius: 12px;
-    border: 1px solid var(--border, rgba(148, 163, 184, 0.28));
-    background: rgba(10, 14, 23, 0.55);
-    color: var(--text, #f1f5f9);
-    font-size: 0.9rem;
-  }
-  .lookup-input:focus {
-    outline: 2px solid var(--accent, #7c8dff);
+    min-height: 3rem;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-border-strong);
+    outline: 2px solid transparent;
     outline-offset: 1px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-base);
+    transition: border-color var(--duration-base) var(--ease-out);
+  }
+  .lookup-input:hover:not(:disabled) {
+    border-color: var(--color-text-muted);
+  }
+  .lookup-input:focus-visible {
+    outline-color: var(--color-focus);
+  }
+  .lookup-input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
   .lookup-input::placeholder {
-    color: rgba(148, 163, 184, 0.6);
+    color: var(--color-text-muted);
   }
   .lookup-btn {
     flex: none;
-    padding: 0.7rem 1.1rem;
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(135deg, #7c8dff, #b06ab3);
-    color: #0a0e17;
-    font-weight: 700;
-    font-size: 0.9rem;
+    min-height: 3rem;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font: inherit;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-base);
+    line-height: 1;
+    white-space: nowrap;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      opacity var(--duration-base) var(--ease-out);
   }
   .lookup-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(124, 141, 255, 0.35);
+    background: var(--color-accent-hover);
+  }
+  .lookup-btn:active:not(:disabled) {
+    transform: translateY(1px);
   }
   .lookup-btn:disabled {
     opacity: 0.55;
     cursor: not-allowed;
   }
   .lookup-btn:focus-visible {
-    outline: 2px solid var(--accent-2, #b06ab3);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .result-region {
@@ -261,102 +297,116 @@
 
   .profile-card {
     display: grid;
-    gap: 1rem;
-    padding: 1.1rem;
-    border-radius: 16px;
-    background: rgba(17, 23, 36, 0.8);
-    border: 1px solid var(--border, rgba(148, 163, 184, 0.2));
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
   }
   .who {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: var(--space-3);
   }
   .avatar {
-    border-radius: 14px;
+    border-radius: var(--radius-md);
     width: 64px;
     height: 64px;
-    box-shadow: 0 0 0 2px rgba(124, 141, 255, 0.5);
+    box-shadow: 0 0 0 2px var(--color-accent);
   }
   .who-info {
     display: grid;
-    gap: 0.15rem;
+    gap: var(--space-1);
     min-width: 0;
   }
   .persona {
     margin: 0;
-    font-size: 1.15rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-display);
+    color: var(--color-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .steam-link {
-    font-size: 0.8rem;
-    color: var(--accent, #7c8dff);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    justify-self: start;
+    font-size: var(--text-sm);
+    color: var(--color-accent-text);
     text-decoration: none;
   }
   .steam-link:hover {
     text-decoration: underline;
   }
+  .steam-link:focus-visible,
+  .dash-cta:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
 
   .stat-tiles {
     margin: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
   }
   .tile {
-    padding: 0.85rem 1rem;
-    border-radius: 14px;
-    background: linear-gradient(160deg, rgba(124, 141, 255, 0.16), rgba(176, 106, 179, 0.1));
-    border: 1px solid rgba(124, 141, 255, 0.35);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
   }
   .tile dt {
-    margin: 0 0 0.2rem;
-    font-size: 0.75rem;
+    margin: 0 0 var(--space-1);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted, #cbd5e1);
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--color-text-muted);
   }
   .tile dd {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-display);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+    letter-spacing: var(--tracking-display);
+    color: var(--color-text);
   }
 
   .list-title {
-    margin: 0.25rem 0 0;
-    font-size: 0.75rem;
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted, #94a3b8);
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--color-text-muted);
   }
   .top-list {
     margin: 0;
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 0.4rem;
   }
   .top-list li {
     display: flex;
     align-items: baseline;
-    gap: 0.6rem;
-    font-size: 0.88rem;
-    padding: 0.35rem 0.5rem;
-    border-radius: 10px;
-    background: rgba(10, 14, 23, 0.4);
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    padding: var(--space-2) 0;
+    border-block-end: 1px solid var(--color-border);
+  }
+  .top-list li:last-child {
+    border-block-end: 0;
   }
   .rank {
     flex: none;
     width: 1.3rem;
     text-align: center;
-    color: var(--accent, #7c8dff);
-    font-weight: 700;
+    color: var(--color-accent-text);
+    font-weight: var(--weight-bold);
   }
   .tname {
     flex: 1;
@@ -364,96 +414,114 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    color: var(--color-text);
   }
   .thours {
     flex: none;
-    color: var(--muted, #94a3b8);
+    color: var(--color-text-muted);
     font-variant-numeric: tabular-nums;
   }
 
   .cta-box {
     display: grid;
-    gap: 0.85rem;
-    padding: 1rem 1.1rem;
-    border-radius: 16px;
-    border: 1px dashed rgba(124, 141, 255, 0.4);
-    background: rgba(124, 141, 255, 0.06);
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: var(--color-accent-soft);
   }
   .cta-box p {
     margin: 0;
-    font-size: 0.92rem;
-    line-height: 1.55;
-    color: var(--muted, #cbd5e1);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
+    color: var(--color-text-body);
   }
   .cta-box strong {
-    color: var(--text, #f1f5f9);
+    color: var(--color-text);
   }
-  .steam-sign-in {
-    display: inline-block;
-    line-height: 0;
-    border-radius: 4px;
+  .dash-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     justify-self: start;
+    min-height: 2.75rem;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color var(--duration-base) var(--ease-out);
   }
-  .steam-sign-in img {
-    display: block;
+  .dash-cta:hover {
+    background: var(--color-accent-hover);
   }
 
   .lookup-msg {
     margin: 0;
-    padding: 0.7rem 0.9rem;
-    border-radius: 12px;
-    border: 1px dashed var(--border, rgba(148, 163, 184, 0.3));
-    color: var(--muted, #94a3b8);
-    font-size: 0.88rem;
-    line-height: 1.55;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-body);
   }
   .lookup-msg strong {
-    color: var(--text, #f1f5f9);
+    color: var(--color-text);
   }
   .error-msg {
-    border-color: rgba(248, 113, 113, 0.45);
-    color: #fca5a5;
+    border-color: var(--color-danger);
+    color: var(--color-danger);
   }
 
   /* ------ skeleton ------ */
   .skeleton {
     display: grid;
-    gap: 0.9rem;
-    padding: 1.1rem;
-    border-radius: 16px;
-    border: 1px solid var(--border, rgba(148, 163, 184, 0.2));
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
   }
   .sk-row {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: var(--space-3);
   }
   .sk-avatar {
+    flex: none;
     width: 64px;
     height: 64px;
-    border-radius: 14px;
-    background: var(--shimmer, rgba(124, 141, 255, 0.18));
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+  }
+  .sk-row > div:last-child {
+    flex: 1;
+    min-width: 0;
   }
   .sk-line {
     height: 0.8rem;
-    border-radius: 6px;
-    background: var(--shimmer, rgba(124, 141, 255, 0.18));
+    margin-block-end: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
   }
   .w70 { width: 70%; }
   .w40 { width: 40%; }
   .sk-tiles {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
   }
   .sk-tile {
     height: 3.6rem;
-    border-radius: 14px;
-    background: var(--shimmer, rgba(124, 141, 255, 0.14));
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
   }
   .sk-list {
     display: grid;
-    gap: 0.4rem;
+    gap: var(--space-2);
   }
 
   @keyframes shimmer {
@@ -462,14 +530,20 @@
     100% { opacity: 0.55; }
   }
   .skeleton :is(.sk-avatar, .sk-line, .sk-tile) {
-    animation: shimmer 1.4s ease-in-out infinite;
+    animation: shimmer 1.4s var(--ease-in-out) infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .skeleton :is(.sk-avatar, .sk-line, .sk-tile),
-    .lookup-btn {
+    .skeleton :is(.sk-avatar, .sk-line, .sk-tile) {
       animation: none;
+    }
+    .lookup-btn,
+    .lookup-input,
+    .dash-cta {
       transition: none;
+    }
+    .lookup-btn:active:not(:disabled) {
+      transform: none;
     }
   }
 
@@ -479,6 +553,9 @@
     }
     .lookup-btn {
       width: 100%;
+    }
+    .profile-card {
+      padding: var(--space-4);
     }
   }
 </style>
