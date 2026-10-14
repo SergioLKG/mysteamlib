@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
 <style>
-.bg{fill:#fff}.a{fill:#f09b51}.b{fill:#011936;fill-rule:nonzero}
-@media (prefers-color-scheme:dark){.bg{fill:#011936}.a{fill:#cd7929}.b{fill:#fefcf9}}
+.bg{fill:#fff}.a{fill:#66c0f4}.b{fill:#011936;fill-rule:nonzero}
+@media (prefers-color-scheme:dark){.bg{fill:#011936}.a{fill:#2b7fc4}.b{fill:#fefcf9}}
 </style>
 <rect class="bg" width="1000" height="1000"/>
 <path class="a" d="M675.292,283.187l-0.292,266.813l62.75,-50l62.25,50l5.99,-127.63c-0.666,-18.008 0.805,-49.511 0.805,-49.511c0.057,-3.3 0.097,-8.046 -0.139,-9.636c-3.094,-20.495 -13.711,-38.126 -30.072,-52.38c-14.48,-13.163 -51.321,-26.667 -101.293,-27.656Z"/>

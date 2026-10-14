@@ -7,19 +7,19 @@ Locked design system. Every page, component and island follows it. Read it befor
 
 ## System
 
-- **Feel**: a collector's shelf at night / a paper catalogue by day. Calm, precise, a little warm. The product answers one question: "what is my next platinum?".
-- **Themes**: two first-class themes from one token set. Dark (ink navy + ember amber) is the default; light (warm paper + navy ink + amber) follows `prefers-color-scheme` and can be forced with `<html data-theme="light|dark">`. Both must be checked on every screen.
+- **Feel**: a collector's shelf at night / a paper catalogue by day. Calm, precise, a little cool. The product answers one question: "what is my next platinum?".
+- **Themes**: two first-class themes from one token set. Dark (ink navy + steam light blue) is the default; light (cool paper #dde5f2 family + navy ink + blue) follows `prefers-color-scheme` and can be forced with `<html data-theme="light|dark">`. Both must be checked on every screen.
 - **Type**: one family, Plus Jakarta Sans (variable, self-hosted via `@fontsource-variable/plus-jakarta-sans`). Display 800, headings 700, UI 600, body 400/500. Headings are always roman, never italic. Emphasis in a heading = accent colour (`--color-accent-text`), not italics.
 - **Shape**: pill chips and pill CTAs; cards 12-14 px radius (`--radius-md/lg`); 1 px hairline borders, no heavy shadows. Dark cards are outlined, light cards sit on paper with a soft navy shadow.
-- **Accent**: exactly one, ember amber. It marks the primary action, the eyebrow, active chips and the one thing that matters per view. Never a second accent hue. Status colours (`ok/warn/danger`) are for state only.
+- **Accent**: exactly one, steam light blue (decided 2026-10-14, replaces the ember amber so the product reads as a game library at first glance). It marks the primary action, the eyebrow, active chips and the one thing that matters per view. Never a second accent hue. Status colours (`ok/warn/danger`) are for state only.
 - **Icons**: one family, Lucide (stroke 1.75, `currentColor`), inlined as SVG. Brand glyphs (Steam in the lookup input) are the only exception; Valve marks only on screens that show Steam data (see D31, Steam API terms).
-- **Imagery**: game art comes from Steam headers. Decorative hero = a row of game "spines" (dark: one glowing amber "platinum" spine; light: navy/amber halftone). No stock photos, no 3D blobs.
+- **Imagery**: game art comes from Steam headers. Decorative hero = a row of game "spines" (dark: one glowing blue "platinum" spine; light: navy/blue halftone). No stock photos, no 3D blobs.
 - **Layout**: hero with eyebrow + display headline + one lookup input + one CTA; "Cómo funciona" as a 3-step row; then product screens. Container `--container`, gutters `--space-gutter`, prose `--measure`.
 - **Brand**: lowercase "mysteamlib". The mark is the isotype `public/mysteamlib-iso-{dark,light}.svg` (one file per theme, `dark` = light shapes for dark UI); `favicon.svg` and `favicon.ico` derive from the square `mysteamlib-logo-*` files (isotype on a solid background); the SVG switches light/dark with `prefers-color-scheme`. `mysteamlib-logo-*.svg` carry an opaque background (social/OG use, not UI). Nothing in the system depends on the mark.
 
 ## Provenance
 
-Studied from two ChatGPT-generated boards (dark = `images/2.png`, light = `images/3.png`, owner's machine) via a colour-sampling pass. Structure kept: sans display, pill chips, amber CTA, spine hero, theme toggle, 3-step row, Steam icon in the input. Not copied: the artwork, the logo and any text. Values were converted to OKLCH and **adjusted for contrast**: light-theme CTA text is navy (not white) because white on amber measures about 3.4:1; light accent text uses a darker amber (L 50 %) than the CTA fill. All text pairs in `tokens.css` pass WCAG AA (≥ 5.2:1 measured).
+Studied from two ChatGPT-generated boards (dark = `images/2.png`, light = `images/3.png`, owner's machine) via a colour-sampling pass. Structure kept: sans display, pill chips, amber CTA, spine hero, theme toggle, 3-step row, Steam icon in the input. Not copied: the artwork, the logo and any text. Values were converted to OKLCH and **adjusted for contrast**: light-theme CTA text is navy (not white) because white on the accent measures too low; light accent text uses a darker blue (L 45 %) than the CTA fill. On 2026-10-14 the accent was moved from the board's ember amber to a steam-like light blue (hue 236°) at the owner's request, keeping the same token structure and contrast rules. All text pairs in `tokens.css` pass WCAG AA (≥ 5.2:1 measured).
 
 ## Tokens
 
@@ -43,8 +43,8 @@ Legacy variable → token (for the Phase 11/12 migration; the old names stay unt
 | `--surface` / `--surface-2`   | `--color-surface` / `--color-surface-2` |
 | `--text`                      | `--color-text`                          |
 | `--muted`                     | `--color-text-muted`                    |
-| `--accent` (indigo `#7c8dff`) | `--color-accent` (amber)                |
-| `--accent-2` (magenta)        | removed, one accent only                |
+| `--accent` (indigo `#7c8dff`) | `--color-accent` (blue)                 |
+| `--accent-2` (magenta)        | `--color-accent-hover`, one accent hue  |
 | `--border`                    | `--color-border`                        |
 | `--radius`                    | `--radius-lg`                           |
 

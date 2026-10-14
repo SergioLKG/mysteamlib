@@ -586,7 +586,7 @@
     transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
   }
   .filters-toggle:hover {
-    border-color: var(--accent, #7c8dff);
+    border-color: var(--accent, var(--color-accent));
   }
   .filters-toggle:active {
     transform: scale(0.97);
@@ -602,7 +602,7 @@
     font-size: 0.72rem;
     font-variant-numeric: tabular-nums;
     color: #0b1020;
-    background: var(--accent, #7c8dff);
+    background: var(--accent, var(--color-accent));
   }
 
   @media (min-width: 1024px) {
@@ -689,13 +689,13 @@
   a:focus-visible,
   button:focus-visible,
   .link-btn:focus-visible {
-    outline: 2px solid var(--accent, #7c8dff);
+    outline: 2px solid var(--accent, var(--color-accent));
     outline-offset: 2px;
   }
 
   .link-btn {
     font: inherit;
-    color: var(--accent, #7c8dff);
+    color: var(--accent, var(--color-accent));
     background: none;
     border: none;
     padding: 0.35rem 0.25rem;
@@ -705,7 +705,7 @@
     transition: color 0.15s ease;
   }
   .link-btn:hover {
-    color: color-mix(in srgb, var(--accent, #7c8dff) 75%, #fff);
+    color: color-mix(in srgb, var(--accent, var(--color-accent)) 75%, #fff);
   }
 
   .summary {
@@ -723,7 +723,7 @@
     font-size: 0.875rem;
   }
   .notice.live {
-    border-color: color-mix(in srgb, var(--accent, #7c8dff) 45%, transparent);
+    border-color: color-mix(in srgb, var(--accent, var(--color-accent)) 45%, transparent);
     color: var(--text, #f1f5f9);
   }
   .count {
@@ -745,8 +745,8 @@
     font-weight: 600;
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
-    color: var(--accent, #7c8dff);
-    background: color-mix(in srgb, var(--accent, #7c8dff) 12%, transparent);
+    color: var(--accent, var(--color-accent));
+    background: color-mix(in srgb, var(--accent, var(--color-accent)) 12%, transparent);
   }
   .pulse {
     animation: pulse 1.2s ease-in-out infinite;
@@ -789,7 +789,7 @@
     transition: border-color 0.15s ease, background 0.15s ease;
   }
   .dir-toggle:hover {
-    border-color: var(--accent, #7c8dff);
+    border-color: var(--accent, var(--color-accent));
   }
   .dir-label {
     font-variant-numeric: tabular-nums;
@@ -804,14 +804,14 @@
   }
   .count .refresh:hover {
     color: var(--text, #f1f5f9);
-    border-color: var(--accent, #7c8dff);
+    border-color: var(--accent, var(--color-accent));
   }
   .count .refresh:disabled {
     opacity: 0.5;
     cursor: default;
   }
   .dir-toggle:focus-visible {
-    outline: 2px solid var(--accent, #7c8dff);
+    outline: 2px solid var(--accent, var(--color-accent));
     outline-offset: 2px;
   }
 
@@ -905,11 +905,11 @@
     touch-action: manipulation;
   }
   .btn-reset:hover {
-    border-color: var(--accent, #7c8dff);
-    background: color-mix(in srgb, var(--accent, #7c8dff) 12%, transparent);
+    border-color: var(--accent, var(--color-accent));
+    background: color-mix(in srgb, var(--accent, var(--color-accent)) 12%, transparent);
   }
   .btn-reset:focus-visible {
-    outline: 2px solid var(--accent, #7c8dff);
+    outline: 2px solid var(--accent, var(--color-accent));
     outline-offset: 2px;
   }
 
@@ -967,7 +967,7 @@
     transition: color 0.15s ease;
   }
   .store-link:hover .name {
-    color: var(--accent, #7c8dff);
+    color: var(--accent, var(--color-accent));
   }
   .name-link {
     display: block;
@@ -1137,7 +1137,7 @@
     inset: 0 auto 0 0;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #7c8dff, #b06ab3);
+    background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover));
   }
   .bar-text {
     position: relative;
