@@ -1,5 +1,7 @@
+<svelte:options css="injected" />
+
 <script lang="ts">
-  import { tick } from 'svelte';
+  import { tick } from "svelte";
   import {
     GENRE_CHIPS_LIMIT,
     LIBRARY_PAGE_SIZE,
@@ -8,7 +10,7 @@
     type PublicLibraryGame,
     type PublicLibrarySort,
     type PublicLibraryState,
-  } from '../lib/publicLibrary/view';
+  } from "../lib/publicLibrary/view";
 
   interface Props {
     gamesCount: number;
@@ -19,26 +21,28 @@
   let { gamesCount, totalHours, games }: Props = $props();
 
   const STATES: { value: PublicLibraryState; label: string }[] = [
-    { value: 'all', label: 'Todos' },
-    { value: 'played', label: 'Jugados' },
-    { value: 'unplayed', label: 'Sin jugar' },
-    { value: 'recent', label: 'Recientes' },
+    { value: "all", label: "Todos" },
+    { value: "played", label: "Jugados" },
+    { value: "unplayed", label: "Sin jugar" },
+    { value: "recent", label: "Recientes" },
   ];
   const SORTS: { value: PublicLibrarySort; label: string }[] = [
-    { value: 'hours', label: 'Más horas' },
-    { value: 'recent', label: 'Recientes' },
-    { value: 'name', label: 'Nombre' },
+    { value: "hours", label: "Más horas" },
+    { value: "recent", label: "Recientes" },
+    { value: "name", label: "Nombre" },
   ];
 
-  let state = $state<PublicLibraryState>('all');
-  let sort = $state<PublicLibrarySort>('hours');
-  let genre = $state('');
-  let query = $state('');
+  let state = $state<PublicLibraryState>("all");
+  let sort = $state<PublicLibrarySort>("hours");
+  let genre = $state("");
+  let query = $state("");
   let shown = $state(LIBRARY_PAGE_SIZE);
   let countEl = $state<HTMLParagraphElement>();
 
   const genres = $derived(topGenres(games, GENRE_CHIPS_LIMIT));
-  const filtered = $derived(filterPublicLibrary(games, { genre, state, sort, query }));
+  const filtered = $derived(
+    filterPublicLibrary(games, { genre, state, sort, query }),
+  );
   const visible = $derived(filtered.slice(0, shown));
 
   // A new filter starts again from the first batch.
@@ -56,14 +60,16 @@
   }
 
   function formatHours(h: number): string {
-    return h === 0 ? 'Sin jugar' : `${h < 0.1 ? '<0,1' : h.toLocaleString('es-ES')} h`;
+    return h === 0
+      ? "Sin jugar"
+      : `${h < 0.1 ? "<0,1" : h.toLocaleString("es-ES")} h`;
   }
 </script>
 
 <section class="library" aria-label="Biblioteca pública">
   <p class="summary">
-    <strong>{gamesCount.toLocaleString('es-ES')}</strong> juegos ·
-    <strong>{totalHours.toLocaleString('es-ES')}</strong> h jugadas
+    <strong>{gamesCount.toLocaleString("es-ES")}</strong> juegos ·
+    <strong>{totalHours.toLocaleString("es-ES")}</strong> h jugadas
   </p>
 
   <div class="controls">
@@ -78,7 +84,12 @@
         bind:value={query}
         oninput={resetBatch}
       />
-      <select class="sort" aria-label="Ordenar por" bind:value={sort} onchange={resetBatch}>
+      <select
+        class="sort"
+        aria-label="Ordenar por"
+        bind:value={sort}
+        onchange={resetBatch}
+      >
         {#each SORTS as s (s.value)}
           <option value={s.value}>{s.label}</option>
         {/each}
@@ -110,7 +121,7 @@
               class="chip"
               aria-pressed={genre === g}
               onclick={() => {
-                genre = genre === g ? '' : g;
+                genre = genre === g ? "" : g;
                 resetBatch();
               }}
             >
@@ -126,7 +137,9 @@
     <p class="count" role="status">No encuentro juegos con estos filtros.</p>
   {:else}
     <p class="count" tabindex="-1" bind:this={countEl}>
-      Mostrando {visible.length.toLocaleString('es-ES')} de {filtered.length.toLocaleString('es-ES')}
+      Mostrando {visible.length.toLocaleString("es-ES")} de {filtered.length.toLocaleString(
+        "es-ES",
+      )}
     </p>
   {/if}
 
@@ -155,9 +168,7 @@
   {/if}
 
   {#if filtered.length > visible.length}
-    <button type="button" class="more" onclick={showMore}>
-      Ver más
-    </button>
+    <button type="button" class="more" onclick={showMore}> Ver más </button>
   {/if}
 </section>
 
@@ -213,23 +224,21 @@
     color: var(--color-text-muted);
   }
 
-  /* One scrolling row on mobile; the padding (undone by the margin) keeps the focus ring from being clipped. */
+  /* Mobile: two rows, each with its own scroll; the padding (undone by the margin) keeps the focus ring from being clipped. */
   .filters {
-    display: flex;
-    gap: var(--space-4);
-    margin: -4px;
-    padding: 4px;
-    overflow-x: auto;
-    scrollbar-width: thin;
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
   }
   .chips {
     display: flex;
     flex: none;
     gap: var(--space-2);
-  }
-  .chips + .chips {
-    padding-inline-start: var(--space-4);
-    border-inline-start: 1px solid var(--color-border);
+    min-width: 0;
+    margin: -4px;
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
   .chip {
     min-height: 2.5rem;
@@ -243,6 +252,7 @@
     font-weight: var(--weight-medium);
     line-height: 1;
     cursor: pointer;
+    text-wrap: nowrap;
     transition:
       background-color var(--duration-base) var(--ease-out),
       border-color var(--duration-base) var(--ease-out);
@@ -250,7 +260,7 @@
   .chip:hover {
     border-color: var(--color-text-muted);
   }
-  .chip[aria-pressed='true'] {
+  .chip[aria-pressed="true"] {
     border-color: var(--color-accent);
     background: var(--color-accent-soft);
     color: var(--color-accent-text);
@@ -322,21 +332,25 @@
     border-color: var(--color-text-muted);
   }
 
-  /* Desktop: states stay big; genres become a thin, bordered strip that scrolls in the free space beside them. */
+  /* Desktop: one row. States stay big; genres become a thin strip that scrolls in the free space beside them, split from the states by a start border the height of the state chips. */
   @media (min-width: 48rem) {
     .filters {
+      display: flex;
       align-items: center;
       gap: var(--space-3);
+    }
+    .filters .chips {
       margin: 0;
       padding: 0;
       overflow: visible;
     }
     .filters .genres {
       flex: 1 1 0;
+      align-self: stretch;
+      align-items: center;
       min-width: 0;
-      padding: 2px var(--space-2);
-      border-block: 1px solid var(--color-border);
-      border-inline-start: 0;
+      padding: 2px var(--space-2) 2px var(--space-3);
+      border-inline-start: 1px solid var(--color-border);
       overflow-x: auto;
       scrollbar-width: thin;
     }
