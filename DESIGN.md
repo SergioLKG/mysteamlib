@@ -15,7 +15,7 @@ Locked design system. Every page, component and island follows it. Read it befor
 - **Icons**: one family, Lucide (stroke 1.75, `currentColor`), inlined as SVG. Brand glyphs (Steam in the lookup input) are the only exception; Valve marks only on screens that show Steam data (see D31, Steam API terms).
 - **Imagery**: game art comes from Steam headers. Decorative hero = a row of game "spines" (dark: one glowing blue "platinum" spine; light: navy/blue halftone). No stock photos, no 3D blobs.
 - **Layout**: hero with eyebrow + display headline + one lookup input + one CTA; "Cómo funciona" as a 3-step row; then product screens. Container `--container`, gutters `--space-gutter`, prose `--measure`.
-- **Brand**: lowercase "mysteamlib". The mark is the isotype `public/mysteamlib-iso-{dark,light}.svg` (one file per theme, `dark` = light shapes for dark UI); `favicon.svg` and `favicon.ico` derive from the square `mysteamlib-logo-*` files (isotype on a solid background); the SVG switches light/dark with `prefers-color-scheme`. `mysteamlib-logo-*.svg` carry an opaque background (social/OG use, not UI). Nothing in the system depends on the mark.
+- **Brand**: lowercase "mysteamlib". The mark is the isotype `public/mysteamlib-iso-{dark,light}.svg` (one file per theme, `dark` = light shapes for dark UI); `favicon.svg` and `favicon.ico` derive from the square `mysteamlib-logo-dark.svg` only (no per-theme variant). `mysteamlib-logo-*.svg` carry an opaque background (social/OG use, not UI). Nothing in the system depends on the mark.
 
 ## Provenance
 

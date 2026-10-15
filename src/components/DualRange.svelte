@@ -23,12 +23,22 @@
     oninput = () => {},
   }: Props = $props();
 
+  // Both inputs span the full min–max range so each thumb stays aligned with
+  // the track; the thumbs are kept from crossing by clamping here.
+  // The input is written back because a clamped value leaves `lo`/`hi` unchanged,
+  // so Svelte would not re-sync the dragged thumb on its own.
   function setLo(e: Event): void {
-    oninput(Number((e.currentTarget as HTMLInputElement).value), hi);
+    const input = e.currentTarget as HTMLInputElement;
+    const next = Math.min(Number(input.value), hi);
+    input.value = String(next);
+    oninput(next, hi);
   }
 
   function setHi(e: Event): void {
-    oninput(lo, Number((e.currentTarget as HTMLInputElement).value));
+    const input = e.currentTarget as HTMLInputElement;
+    const next = Math.max(Number(input.value), lo);
+    input.value = String(next);
+    oninput(lo, next);
   }
 
   const span = $derived(Math.max(1, max - min));
@@ -37,9 +47,7 @@
   const valueText = $derived(
     lo === min && hi === max ? 'Cualquiera' : `${lo} – ${hi}`,
   );
-
-  // Keep the two thumbs from crossing: the low input is capped at the current
-  // high value and vice versa, so min/max can never invert.
+  // When both thumbs sit near max, the low one goes on top so it can be dragged back.
 </script>
 
 <div class="dual-range">
@@ -56,16 +64,17 @@
     class="range range-lo"
     type="range"
     {min}
-    max={hi}
+    {max}
     {step}
     value={lo}
+    style:z-index={pctLo > 50 ? 4 : undefined}
     aria-label={loLabel || `${label}, mínimo`}
     oninput={setLo}
   />
   <input
     class="range range-hi"
     type="range"
-    min={lo}
+    {min}
     {max}
     {step}
     value={hi}
