@@ -570,7 +570,12 @@
     display: flex;
     align-items: center;
   }
+  /* Floating pill (mobile only): bottom-left, mirroring the back-to-top button. */
   .filters-toggle {
+    position: fixed;
+    inset-inline-start: max(var(--space-gutter), env(safe-area-inset-left));
+    inset-block-end: max(var(--space-4), env(safe-area-inset-bottom));
+    z-index: 10;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -578,10 +583,11 @@
     font: inherit;
     font-weight: 600;
     color: var(--text, #f1f5f9);
-    padding: 0.5rem 0.9rem;
-    border: 1px solid var(--border, rgba(148, 163, 184, 0.24));
+    padding: 0.7rem 1.1rem;
+    border: 1px solid var(--color-border-strong);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--surface, #0f1420) 70%, #000);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pop);
     cursor: pointer;
     transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
   }

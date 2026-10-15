@@ -2,6 +2,7 @@
 import Analytics from '@vercel/analytics/astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import BackToTop from '../components/BackToTop.svelte';
 import '@fontsource-variable/plus-jakarta-sans';
 import '../styles/tokens.css';
 import { THEME_COLOR } from '../lib/ui/theme-colors';
@@ -53,6 +54,7 @@ const { title = 'mysteamlib', description, containedFooter = true, themed = fals
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
     <slot />
     <SiteFooter contained={containedFooter} />
+    <BackToTop client:idle />
     <Analytics />
     <SpeedInsights />
   </body>
