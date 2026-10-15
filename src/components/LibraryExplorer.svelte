@@ -56,6 +56,8 @@
   // in a sticky sidebar. Focus moves to the close button on open and returns
   // to the toggle when closing (Esc / backdrop / close all supported).
   let filterOpen = $state(false);
+  // steam://run needs desktop Steam; hidden on touch/mobile devices (A20).
+  let canLaunch = $state(false);
   let filterToggleBtn: HTMLButtonElement | undefined;
   let filterCloseBtn: HTMLButtonElement | undefined;
 
@@ -243,6 +245,11 @@
   }
 
   onMount(() => {
+    // Set before load() so the cards never render the ► and then drop it.
+    // Device-based (not width): a narrow desktop window still runs Steam.
+    const mobileUa = (navigator as Navigator & { userAgentData?: { mobile: boolean } })
+      .userAgentData?.mobile;
+    canLaunch = !matchMedia('(pointer: coarse)').matches && mobileUa !== true;
     initFromUrl();
     void load().then(() => {
       // Data older than 6h → refresh in the background without blocking the
@@ -463,16 +470,18 @@
               >
                 <h3 class="name">{c.name}</h3>
               </a>
-              <a
-                class="play"
-                href={`steam://run/${c.appid}`}
-                title={`Abrir ${c.name} en Steam`}
-                aria-label={`Abrir ${c.name} en Steam`}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </a>
+              {#if canLaunch}
+                <a
+                  class="play"
+                  href={`steam://run/${c.appid}`}
+                  title={`Abrir ${c.name} en Steam`}
+                  aria-label={`Abrir ${c.name} en Steam`}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </a>
+              {/if}
             </div>
             <p class="meta">
               {genresOf(c)}
