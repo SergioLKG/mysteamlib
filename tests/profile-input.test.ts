@@ -21,9 +21,30 @@ describe('parseProfileInput', () => {
     expect(parseProfileInput('/id/gaben')).toEqual({ kind: 'vanity', vanity: 'gaben' });
   });
 
+  it('accepts a bare custom name as a vanity', () => {
+    expect(parseProfileInput('gaben')).toEqual({ kind: 'vanity', vanity: 'gaben' });
+    expect(parseProfileInput('  mi_nick-2 ')).toEqual({ kind: 'vanity', vanity: 'mi_nick-2' });
+  });
+
+  it('rejects names Steam cannot have as a custom URL', () => {
+    expect(parseProfileInput('ab')).toBeNull();
+    expect(parseProfileInput('con espacios')).toBeNull();
+    expect(parseProfileInput('a'.repeat(33))).toBeNull();
+    expect(parseProfileInput('https://steamcommunity.com/id/a%20b')).toBeNull();
+  });
+
+  it('rejects digit-only input that is not a 17-digit SteamID', () => {
+    expect(parseProfileInput('123')).toBeNull();
+    expect(parseProfileInput('7656119800000000')).toBeNull();
+    expect(parseProfileInput('765611980000000000')).toBeNull();
+  });
+
+  it('accepts /id/<vanity>/ with a trailing slash', () => {
+    expect(parseProfileInput('https://steamcommunity.com/id/gaben/')).toEqual({ kind: 'vanity', vanity: 'gaben' });
+  });
+
   it('rejects malformed ids, other hosts and non-profile paths', () => {
     expect(parseProfileInput('')).toBeNull();
-    expect(parseProfileInput('1234')).toBeNull();
     expect(parseProfileInput('https://steamcommunity.com/profiles/abc')).toBeNull();
     expect(parseProfileInput('https://steamcommunity.com/app/730')).toBeNull();
     expect(parseProfileInput(`https://example.com/profiles/${ID}`)).toBeNull();

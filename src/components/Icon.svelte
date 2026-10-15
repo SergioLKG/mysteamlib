@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { ICONS, ICON_DEFAULT_SIZE, ICON_STROKE_WIDTH, type IconName } from '../lib/ui/icons';
+  import {
+    FILLED_ICON_VIEWBOX,
+    ICONS,
+    ICON_DEFAULT_SIZE,
+    ICON_STROKE_WIDTH,
+    type IconName,
+  } from '../lib/ui/icons';
 
   interface Props {
     name: IconName;
@@ -10,15 +16,16 @@
   }
 
   let { name, size = ICON_DEFAULT_SIZE, label }: Props = $props();
+  const filledViewBox = $derived(FILLED_ICON_VIEWBOX[name]);
 </script>
 
 <svg
   class="icon"
   width={size}
   height={size}
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="currentColor"
+  viewBox={filledViewBox ?? '0 0 24 24'}
+  fill={filledViewBox ? 'currentColor' : 'none'}
+  stroke={filledViewBox ? 'none' : 'currentColor'}
   stroke-width={ICON_STROKE_WIDTH}
   stroke-linecap="round"
   stroke-linejoin="round"

@@ -250,6 +250,24 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
     }
   }
 
+  /* 320 px: logo + login + theme toggle do not fit with the glyph. */
+  @media (max-width: 360px) {
+    .bar {
+      gap: 0.5rem;
+    }
+    .side {
+      gap: 0.4rem;
+    }
+    .login {
+      gap: 0;
+      padding: 0 0.7rem;
+      font-size: 0.8rem;
+    }
+    .login :global(.icon) {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .chip,
     .logout,
