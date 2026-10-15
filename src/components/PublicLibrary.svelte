@@ -67,65 +67,58 @@
   </p>
 
   <div class="controls">
-    <input
-      class="search"
-      type="search"
-      autocomplete="off"
-      spellcheck="false"
-      placeholder="Buscar por nombre"
-      aria-label="Buscar por nombre"
-      bind:value={query}
-      oninput={resetBatch}
-    />
-
-    <div class="chips" role="group" aria-label="Estado">
-      {#each STATES as s (s.value)}
-        <button
-          type="button"
-          class="chip"
-          aria-pressed={state === s.value}
-          onclick={() => {
-            state = s.value;
-            resetBatch();
-          }}
-        >
-          {s.label}
-        </button>
-      {/each}
+    <div class="row">
+      <input
+        class="search"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Buscar por nombre"
+        aria-label="Buscar por nombre"
+        bind:value={query}
+        oninput={resetBatch}
+      />
+      <select class="sort" aria-label="Ordenar por" bind:value={sort} onchange={resetBatch}>
+        {#each SORTS as s (s.value)}
+          <option value={s.value}>{s.label}</option>
+        {/each}
+      </select>
     </div>
 
-    {#if genres.length > 0}
-      <div class="chips" role="group" aria-label="Género">
-        {#each genres as g (g)}
+    <div class="filters">
+      <div class="chips" role="group" aria-label="Estado">
+        {#each STATES as s (s.value)}
           <button
             type="button"
             class="chip"
-            aria-pressed={genre === g}
+            aria-pressed={state === s.value}
             onclick={() => {
-              genre = genre === g ? '' : g;
+              state = s.value;
               resetBatch();
             }}
           >
-            {g}
+            {s.label}
           </button>
         {/each}
       </div>
-    {/if}
 
-    <div class="chips" role="group" aria-label="Orden">
-      {#each SORTS as s (s.value)}
-        <button
-          type="button"
-          class="chip"
-          aria-pressed={sort === s.value}
-          onclick={() => {
-            sort = s.value;
-            resetBatch();
-          }}
-        >
-          {s.label}
-        </button>
-      {/each}
+      {#if genres.length > 0}
+        <div class="chips genres" role="group" aria-label="Género">
+          {#each genres as g (g)}
+            <button
+              type="button"
+              class="chip"
+              aria-pressed={genre === g}
+              onclick={() => {
+                genre = genre === g ? '' : g;
+                resetBatch();
+              }}
+            >
+              {g}
+            </button>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
 
@@ -188,7 +181,13 @@
     display: grid;
     gap: var(--space-3);
   }
-  .search {
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+  }
+  .search,
+  .sort {
     min-width: 0;
     min-height: 2.75rem;
     padding: 0 var(--space-4);
@@ -201,17 +200,36 @@
     font: inherit;
     font-size: var(--text-sm);
   }
-  .search:focus-visible {
+  .sort {
+    color-scheme: light dark;
+    padding-inline-end: var(--space-3);
+    cursor: pointer;
+  }
+  .search:focus-visible,
+  .sort:focus-visible {
     outline-color: var(--color-focus);
   }
   .search::placeholder {
     color: var(--color-text-muted);
   }
 
+  /* One scrolling row on mobile; the padding (undone by the margin) keeps the focus ring from being clipped. */
+  .filters {
+    display: flex;
+    gap: var(--space-4);
+    margin: -4px;
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
   .chips {
     display: flex;
-    flex-wrap: wrap;
+    flex: none;
     gap: var(--space-2);
+  }
+  .chips + .chips {
+    padding-inline-start: var(--space-4);
+    border-inline-start: 1px solid var(--color-border);
   }
   .chip {
     min-height: 2.5rem;
@@ -302,6 +320,34 @@
   }
   .more:hover {
     border-color: var(--color-text-muted);
+  }
+
+  /* Desktop: states stay big; genres become a thin, bordered strip that scrolls in the free space beside them. */
+  @media (min-width: 48rem) {
+    .filters {
+      align-items: center;
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+      overflow: visible;
+    }
+    .filters .genres {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 2px var(--space-2);
+      border-block: 1px solid var(--color-border);
+      border-inline-start: 0;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+    .genres .chip {
+      min-height: 1.75rem;
+      padding: 0 var(--space-3);
+      font-size: var(--text-xs);
+    }
+    .genres .chip:focus-visible {
+      outline-offset: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {

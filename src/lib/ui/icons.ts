@@ -26,6 +26,7 @@
 export const ICON_NAMES = [
   'search',
   'arrow-right',
+  'arrow-up',
   'external-link',
   'loader-circle',
   'circle-alert',
@@ -52,6 +53,7 @@ export const ICON_STROKE_WIDTH = 1.75;
 export const ICONS: Record<IconName, string> = {
   search: '<path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" />',
   'arrow-right': '<path d="M5 12h14" /><path d="m12 5 7 7-7 7" />',
+  'arrow-up': '<path d="m5 12 7-7 7 7" /><path d="M12 19V5" />',
   'external-link':
     '<path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />',
   'loader-circle': '<path d="M21 12a9 9 0 1 1-6.219-8.56" />',

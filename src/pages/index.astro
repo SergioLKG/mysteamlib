@@ -4,6 +4,7 @@ import SiteHeader from '../components/SiteHeader.astro';
 import HeroSpines from '../components/HeroSpines.astro';
 import Icon from '../components/Icon.astro';
 import ProfileLookup from '../components/ProfileLookup.svelte';
+import BackToTop from '../components/BackToTop.svelte';
 
 const user = Astro.locals.user;
 const title = 'mysteamlib: elige qué jugar de tu biblioteca de Steam';
@@ -88,6 +89,8 @@ const tools = [
       <p class="more"><i>Hay dos más en camino.</i></p>
     </section>
   </main>
+
+  <BackToTop client:idle />
 </BaseLayout>
 
 <style is:global>
