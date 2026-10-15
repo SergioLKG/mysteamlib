@@ -160,7 +160,6 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
   .chip:hover {
     border-color: color-mix(in srgb, var(--accent, var(--color-accent)) 55%, var(--border, var(--color-border)));
     background: var(--surface-2, var(--color-surface-2));
-    transform: translateY(-1px);
   }
   .chip-avatar,
   .chip-fallback {
@@ -248,6 +247,24 @@ const initial = [...displayName][0]?.toUpperCase() ?? '?';
     .login {
       padding: 0 0.85rem;
       font-size: 0.85rem;
+    }
+  }
+
+  /* 320 px: logo + login + theme toggle do not fit with the glyph. */
+  @media (max-width: 360px) {
+    .bar {
+      gap: 0.5rem;
+    }
+    .side {
+      gap: 0.4rem;
+    }
+    .login {
+      gap: 0;
+      padding: 0 0.7rem;
+      font-size: 0.8rem;
+    }
+    .login :global(.icon) {
+      display: none;
     }
   }
 

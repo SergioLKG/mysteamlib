@@ -43,6 +43,11 @@ export interface PublicLibraryFilters {
   query: string;
 }
 
+/** Games rendered per batch by the island (A9: no server-side pagination). */
+export const LIBRARY_PAGE_SIZE = 48;
+/** Genre chips shown above the list. */
+export const GENRE_CHIPS_LIMIT = 8;
+
 /** Minutes to hours with one decimal. */
 export function toHours(minutes: number): number {
   return Math.round((minutes / 60) * 10) / 10;
@@ -89,4 +94,19 @@ export function filterPublicLibrary(
     return by !== 0 ? by : cmpName(a, b);
   });
   return list;
+}
+
+/**
+ * Most frequent genres of the library, for the filter chips: count desc, name
+ * as tiebreak. Games without genre data contribute nothing.
+ */
+export function topGenres(games: readonly PublicLibraryGame[], limit: number): string[] {
+  const counts = new Map<string, number>();
+  for (const g of games) {
+    for (const genre of new Set(g.genres)) counts.set(genre, (counts.get(genre) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .slice(0, limit)
+    .map(([genre]) => genre);
 }

@@ -83,7 +83,7 @@ export const GET: APIRoute = async ({ params, clientAddress }) => {
     // Steam down, rate limited by Valve, or our own daily budget exhausted.
     console.error('public library failed', e);
     if (e instanceof SteamRateLimitError) {
-      return json({ ok: false, error: 'Steam está recibiendo demasiadas consultas. Inténtalo de nuevo en unos minutos.' }, 503);
+      return json({ ok: false, error: 'Los servidores de Steam están saturados en este momento. Prueba de nuevo más tarde.' }, 503);
     }
     return json({ ok: false, error: 'No he podido consultar Steam ahora mismo. Inténtalo de nuevo en un momento.' }, 502);
   }

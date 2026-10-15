@@ -3,6 +3,7 @@ import {
   buildPublicLibrary,
   filterPublicLibrary,
   toHours,
+  topGenres,
   type CatalogEntry,
   type PublicLibraryFilters,
   type PublicLibraryGame,
@@ -94,5 +95,28 @@ describe('filterPublicLibrary', () => {
     const copy = [...lib];
     filterPublicLibrary(lib, { ...DEFAULTS, sort: 'name' });
     expect(lib).toEqual(copy);
+  });
+});
+
+describe('topGenres', () => {
+  const lib = [
+    game({ appid: 1, name: 'A', genres: ['Action', 'RPG'] }),
+    game({ appid: 2, name: 'B', genres: ['RPG'] }),
+    game({ appid: 3, name: 'C', genres: ['Indie', 'Action'] }),
+    game({ appid: 4, name: 'D', genres: null }),
+  ];
+
+  it('orders by frequency desc with name as tiebreak', () => {
+    expect(topGenres(lib, 10)).toEqual(['Action', 'RPG', 'Indie']);
+  });
+
+  it('counts a genre once per game', () => {
+    const dup = [game({ appid: 1, name: 'A', genres: ['RPG', 'RPG'] }), game({ appid: 2, name: 'B', genres: ['Indie'] })];
+    expect(topGenres(dup, 10)).toEqual(['Indie', 'RPG']);
+  });
+
+  it('applies the limit and ignores games without genre data', () => {
+    expect(topGenres(lib, 1)).toEqual(['Action']);
+    expect(topGenres([game({ appid: 5, name: 'E' })], 5)).toEqual([]);
   });
 });
