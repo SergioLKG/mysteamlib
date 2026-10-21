@@ -9,5 +9,10 @@ import svelte from '@astrojs/svelte';
 export default defineConfig({
   output: 'server',
   adapter: vercel(),
-  integrations: [svelte()]
+  integrations: [svelte()],
+  vite: {
+    optimizeDeps: {
+      include: ['svelte', 'drizzle-orm'], // Añade aquí dependencias comunes que uses
+    }
+  }
 });
