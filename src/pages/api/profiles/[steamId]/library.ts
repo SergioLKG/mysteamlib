@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { SteamRateLimitError, getOwnedGames } from '../../../../lib/steam/webApi';
+import { SteamAuthError, SteamRateLimitError, getOwnedGames } from '../../../../lib/steam/webApi';
 import { parseProfileInput } from '../../../../lib/steam/profileInput';
 import { isRateLimited } from '../../../../lib/db/rateLimit';
 import { getCatalogInfo } from '../../../../lib/db/queries/catalog';
@@ -84,6 +84,9 @@ export const GET: APIRoute = async ({ params, clientAddress }) => {
     console.error('public library failed', e);
     if (e instanceof SteamRateLimitError) {
       return json({ ok: false, error: 'Los servidores de Steam están saturados en este momento. Prueba de nuevo más tarde.' }, 503);
+    }
+    if (e instanceof SteamAuthError) {
+      return json({ ok: false, error: 'Hay un problema de configuración en mysteamlib y no puedo consultar Steam ahora mismo. Ya está en nuestro radar; inténtalo de nuevo más tarde.' }, 500);
     }
     return json({ ok: false, error: 'No he podido consultar Steam ahora mismo. Inténtalo de nuevo en un momento.' }, 502);
   }

@@ -6,8 +6,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --env-file-if-exists=.env.local node_modules/astro/bin/astro.mjs dev",
-    "build": "if [ \"$VERCEL_ENV\" = \"production\" ]; then drizzle-kit migrate; fi && astro build",
+    "dev": "astro dev",
+    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
@@ -18,14 +18,14 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.10",
-    "@astrojs/svelte": "^9.0.1",
-    "@astrojs/vercel": "^11.0.14",
+    "@astrojs/check": "^0.9.11",
+    "@astrojs/svelte": "^9.1.0",
+    "@astrojs/vercel": "^11.0.16",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@neondatabase/serverless": "^1.1.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "astro": "^7.3.8",
+    "astro": "^7.4.1",
     "drizzle-orm": "^0.45.2",
     "howlongtobeat-ts": "^1.3.1",
     "svelte": "^5.57.0",
@@ -34,10 +34,6 @@
   "overrides": {
     "path-to-regexp": "^6.3.0",
     "esbuild": ">=0.25.0"
-  },
-  "allowScripts": {
-    "esbuild": true,
-    "es5-ext": true
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

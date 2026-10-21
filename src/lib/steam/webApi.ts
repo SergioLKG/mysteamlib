@@ -46,8 +46,12 @@ async function steamRequest<T>(
   const res = await fetch(url);
   if (!res.ok) {
     // Steam returns 429 or x-eresult 25/84 when rate limited
-    if (res.status === 429 || res.status === 401) {
+    if (res.status === 429) {
       throw new SteamRateLimitError(`Steam API rate limited: ${res.status}`);
+    }
+    // An expired or invalid STEAM_API_KEY is our misconfiguration, not Steam being busy.
+    if (res.status === 401) {
+      throw new SteamAuthError(`Steam API rejected the key: ${interfaceName}/${method} ${res.status}`);
     }
     throw new Error(`Steam API ${interfaceName}/${method} failed: ${res.status}`);
   }
@@ -55,6 +59,7 @@ async function steamRequest<T>(
 }
 
 export class SteamRateLimitError extends Error {}
+export class SteamAuthError extends Error {}
 
 // --- Response types ---
 
