@@ -1,9 +1,11 @@
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 */
-/* Hallmark · design system: mysteamlib · genre: modern-minimal · theme: custom (studied from two boards)weights
+/* Hallmark · design system: mysteamlib · genre: modern-minimal · theme: custom (studied from two boards)
  * DNA-source: image (dark board + light board) · locked by app/DESIGN.md
  *
  * Single source of truth for colour, type, space, radius, motion and elevation.
- * Components reference these tokens by name: no inline colours or font-family.
+ * Colour = a six-family brand palette (ink, paper, steam, moss, amber, coral) plus
+ * semantic tokens that reference it. Components use the semantic tokens by name:
+ * no inline colours or font-family.
  * Imported by `BaseLayout.astro` since 2026-10-14. Phases 11 and 12 migrate the
  * pages off the legacy `--bg/--surface/--accent…` variables (mapping table in DESIGN.md).
  *
@@ -22,39 +24,96 @@
     sans-serif;
   --font-display: var(--font-sans);
 
-  /* ---- Colour: surfaces (navy ink / cool paper, light = #dde5f2 family) ---- */
-  --color-bg: light-dark(oklch(92% 0.02 260), oklch(15.8% 0.024 241));
-  --color-surface: light-dark(oklch(96.5% 0.012 260), oklch(19.4% 0.027 245));
-  --color-surface-2: light-dark(oklch(89% 0.024 260), oklch(22.8% 0.033 246));
-  --color-border: light-dark(oklch(82% 0.024 260), oklch(25.7% 0.031 243));
-  --color-border-strong: light-dark(
-    oklch(74% 0.03 258),
-    oklch(49% 0.035 244)
+  /* ==== BRAND PALETTE (the only raw colours in the system) ====
+     Six families. Step names are the OKLCH lightness in %. Semantic tokens below
+     reference these; components use the semantic tokens, never the palette.
+     Exceptions allowed: gradients and alpha overlays built from palette steps
+     with color-mix(), and the pure-black pop shadow. Nothing else. */
+
+  /* Ink: night navy surfaces in dark, navy text in light */
+  --ink-16: oklch(15.8% 0.024 245);
+  --ink-19: oklch(19.4% 0.027 245);
+  --ink-21: oklch(21.4% 0.065 252);
+  --ink-23: oklch(22.8% 0.033 245);
+  --ink-26: oklch(25.7% 0.031 245);
+  --ink-35: oklch(34.9% 0.057 251);
+  --ink-44: oklch(44.2% 0.034 255);
+  --ink-56: oklch(56% 0.035 250);
+  --ink-70: oklch(70% 0.032 245);
+  --ink-82: oklch(82.2% 0.029 247);
+
+  /* Paper: cool paper surfaces in light (#dde5f2 family), near-white text in dark */
+  --paper-99: oklch(99.2% 0.005 260);
+  --paper-97: oklch(96.5% 0.012 260);
+  --paper-92: oklch(92% 0.02 260);
+  --paper-89: oklch(89% 0.024 260);
+  --paper-82: oklch(82% 0.024 260);
+
+  /* Steam: the one accent (steam light blue). Used only through the accent tokens */
+  --steam-45: oklch(45% 0.12 238);
+  --steam-55: oklch(55% 0.12 238);
+  --steam-60: oklch(60% 0.12 238);
+  --steam-66: oklch(66% 0.12 238);
+  --steam-78: oklch(78% 0.12 238);
+  --steam-82: oklch(82% 0.1 238);
+
+  /* State colours: moss = ok, amber = warn, coral = danger (two steps each: light / dark) */
+  --moss-45: oklch(45% 0.11 155);
+  --moss-78: oklch(78% 0.14 155);
+  --amber-50: oklch(50% 0.11 85);
+  --amber-82: oklch(82% 0.13 88);
+  --coral-48: oklch(48% 0.17 25);
+  --coral-72: oklch(72% 0.15 25);
+
+  /* ==== SEMANTIC COLOUR (what components use) ==== */
+
+  /* Surfaces */
+  --color-bg: light-dark(var(--paper-92), var(--ink-16));
+  --color-surface: light-dark(var(--paper-97), var(--ink-19));
+  --color-surface-2: light-dark(var(--paper-89), var(--ink-23));
+  --color-border: light-dark(var(--paper-82), var(--ink-26));
+  /* >= 3:1 on bg, surface and surface-2 (input borders, marked element) */
+  --color-border-strong: var(--ink-56);
+
+  /* Text */
+  --color-text: light-dark(var(--ink-21), var(--paper-99));
+  --color-text-body: light-dark(var(--ink-35), var(--ink-82));
+  --color-text-muted: light-dark(var(--ink-44), var(--ink-70));
+
+  /* Accent (one only) */
+  --color-accent: light-dark(var(--steam-66), var(--steam-78));
+  --color-accent-hover: light-dark(var(--steam-60), var(--steam-82));
+  --color-on-accent: light-dark(var(--ink-21), var(--ink-16));
+  --color-accent-text: light-dark(var(--steam-45), var(--steam-78));
+  --color-accent-soft: color-mix(
+    in oklch,
+    var(--color-accent) 14%,
+    transparent
+  );
+  --color-focus: light-dark(var(--steam-45), var(--steam-78));
+  /* Non-text blue (bookmark spine, selection marks): >= 3:1 on all surfaces.
+     --color-accent as a graphic fill measures 2.8:1 on light surface. */
+  --color-accent-mark: light-dark(var(--steam-55), var(--steam-78));
+
+  /* State (difficulty chips, sync states, errors) */
+  --color-ok: light-dark(var(--moss-45), var(--moss-78));
+  --color-warn: light-dark(var(--amber-50), var(--amber-82));
+  --color-danger: light-dark(var(--coral-48), var(--coral-72));
+
+  /* Shelf spines (data, never decoration; each >= 3:1 on surfaces) */
+  --color-spine-empty: var(--ink-56);
+  --color-spine-played: light-dark(var(--ink-44), var(--ink-70));
+  --color-spine-done: var(--color-ok);
+  /* "started" = diagonal hatch in the played ink, readable without colour */
+  --pattern-started: repeating-linear-gradient(
+    45deg,
+    var(--color-spine-played) 0 2px,
+    transparent 2px 5px
   );
 
-  /* ---- Colour: text ---- */
-  --color-text: light-dark(oklch(21.4% 0.065 254), oklch(99.2% 0.005 78));
-  --color-text-body: light-dark(oklch(34.9% 0.057 251), oklch(82.2% 0.029 247));
-  --color-text-muted: light-dark(
-    oklch(44.2% 0.034 257),
-    oklch(70.3% 0.032 244)
-  );
-
-  /* ---- Colour: accent (steam light blue, cool). One accent only. ---- */
-  --color-accent: light-dark(oklch(66% 0.12 236), oklch(76% 0.12 236));
-  --color-accent-hover: light-dark(oklch(60% 0.12 236), oklch(82% 0.1 236));
-  --color-on-accent: light-dark(oklch(21.4% 0.065 254), oklch(18% 0.03 245));
-  --color-accent-text: light-dark(oklch(45% 0.12 245), oklch(80% 0.11 236));
-  --color-accent-soft: light-dark(
-    oklch(66% 0.12 236 / 0.14),
-    oklch(76% 0.12 236 / 0.14)
-  );
-  --color-focus: light-dark(oklch(45% 0.12 245), oklch(80% 0.11 236));
-
-  /* ---- Colour: status (difficulty chips, sync states, errors) ---- */
-  --color-ok: light-dark(oklch(45% 0.11 155), oklch(78% 0.14 155));
-  --color-warn: light-dark(oklch(50% 0.11 85), oklch(82% 0.13 90));
-  --color-danger: light-dark(oklch(48% 0.17 25), oklch(72% 0.15 25));
+  /* Decorative "ficha" ruling (hero and footer bg only; exempt from contrast) */
+  --color-rule: light-dark(var(--paper-89), var(--ink-23));
+  --rule-gap: 1.75rem;
 
   /* ---- Type scale (fluid; headings roman, never italic) ---- */
   --text-xs: 0.75rem;
@@ -65,11 +124,15 @@
   --text-2xl: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
   --text-3xl: clamp(2rem, 1.4rem + 2.4vw, 3rem);
   --text-display: clamp(2.5rem, 1.5rem + 4.6vw, 4.75rem);
+  /* Stat figures: weight 700, tabular-nums, tracking-stat; label below in muted */
+  --text-stat: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+  --text-stat-sm: clamp(1.5rem, 1.25rem + 1vw, 1.875rem);
   --leading-tight: 1.08;
   --leading-snug: 1.3;
   --leading-body: 1.6;
   --tracking-display: -0.025em;
   --tracking-eyebrow: 0.14em;
+  --tracking-stat: -0.03em;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -97,19 +160,40 @@
   --radius-lg: 0.875rem;
   --radius-pill: 999px;
 
-  /* ---- Elevation (dark: soft blue glow; light: soft navy shadow) ---- */
-  --shadow-card: light-dark(
-    0 1px 2px oklch(21.4% 0.065 254 / 0.06),
-    0 0 0 1px oklch(25.7% 0.031 243 / 0.6)
-  );
-  --shadow-pop: light-dark(
-    0 12px 32px oklch(21.4% 0.065 254 / 0.14),
-    0 16px 40px oklch(0% 0 0 / 0.5)
-  );
-  --glow-accent: light-dark(
-    0 6px 20px oklch(66% 0.12 236 / 0.35),
-    0 0 32px oklch(76% 0.12 236 / 0.35)
-  );
+  /* ---- Elevation (dark: soft blue glow + ring; light: soft navy shadow).
+     light-dark() only takes colours, so each layer carries its own
+     light-dark() colour and the inactive theme gets `transparent`. ---- */
+  --shadow-card:
+    0 1px 2px
+      light-dark(
+        color-mix(in oklch, var(--ink-21) 6%, transparent),
+        transparent
+      ),
+    0 0 0 1px
+      light-dark(
+        transparent,
+        color-mix(in oklch, var(--ink-26) 60%, transparent)
+      );
+  --shadow-pop:
+    0 12px 32px
+      light-dark(
+        color-mix(in oklch, var(--ink-21) 14%, transparent),
+        transparent
+      ),
+    0 16px 40px light-dark(transparent, oklch(0% 0 0 / 0.5)); /* exception: pure-black shadow */
+  --glow-accent:
+    0 6px 20px
+      light-dark(
+        color-mix(in oklch, var(--color-accent) 35%, transparent),
+        transparent
+      ),
+    0 0 32px
+      light-dark(
+        transparent,
+        color-mix(in oklch, var(--color-accent) 35%, transparent)
+      );
+  /* The only glow in the system: the bookmarked spine (max 3 per screen) */
+  --glow-bookmark: var(--glow-accent);
 
   /* ---- Motion ---- */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -131,6 +215,18 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
+}
+
+/* Windows high contrast: spines and bookmarks must stay visible as data. */
+@media (forced-colors: active) {
+  :root {
+    --color-spine-empty: CanvasText;
+    --color-spine-played: CanvasText;
+    --color-spine-done: Highlight;
+    --color-accent-mark: Highlight;
+    --color-rule: Canvas;
+    --glow-bookmark: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
