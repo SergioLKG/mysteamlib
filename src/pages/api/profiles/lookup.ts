@@ -3,6 +3,7 @@ import { SteamAuthError, SteamRateLimitError, getPlayerSummaries, resolveVanityU
 import { parseProfileInput } from '../../../lib/steam/profileInput';
 import { isRateLimited } from '../../../lib/db/rateLimit';
 import '../../../lib/sync/steamBudget';
+import { getProfileExtras } from '../../../lib/sync/profileExtras';
 
 export const prerender = false;
 
@@ -35,6 +36,9 @@ export type ProfileLookupPayload =
       // `public` here only means the profile page is public: the library may
       // still be hidden (the library endpoint answers `unreadable`).
       visibility: 'public' | 'private';
+      // Live from Steam, never stored. Null on private profiles or if Steam failed.
+      steamLevel: number | null;
+      steamCreatedAt: string | null;
     }
   | { ok: false; error: string };
 
@@ -74,6 +78,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const summaries = await getPlayerSummaries([steamId]);
     const player = summaries.response?.players?.[0];
     if (!player) return json({ ok: false, error: NOT_FOUND_MESSAGE }, 404);
+    const extras = await getProfileExtras(player);
 
     return json(
       {
@@ -83,6 +88,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         avatarUrl: player.avatarfull ?? null,
         profileUrl: player.profileurl ?? `https://steamcommunity.com/profiles/${steamId}`,
         visibility: player.communityvisibilitystate === 3 ? 'public' : 'private',
+        steamLevel: extras?.steamLevel ?? null,
+        steamCreatedAt: extras?.steamCreatedAt?.toISOString() ?? null,
       },
       200,
     );

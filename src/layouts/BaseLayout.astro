@@ -82,4 +82,25 @@ const { title = 'mysteamlib', description, containedFooter = true, themed = fals
   main[id] {
     scroll-margin-top: calc(var(--header-h, 3.875rem) + 1rem);
   }
+
+  /* "Ficha" ruling: hero and footer backgrounds only, never behind dense text (DESIGN.md, Layout). */
+  .ruled {
+    background-image:
+      linear-gradient(
+        to right,
+        transparent calc(var(--space-gutter) * 2),
+        color-mix(in oklch, var(--color-accent-mark) 35%, transparent) calc(var(--space-gutter) * 2) calc(var(--space-gutter) * 2 + 1px),
+        transparent calc(var(--space-gutter) * 2 + 1px)
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0 calc(var(--rule-gap) - 1px),
+        var(--color-rule) calc(var(--rule-gap) - 1px) var(--rule-gap)
+      );
+  }
+  @media (forced-colors: active) {
+    .ruled {
+      background-image: none;
+    }
+  }
 </style>

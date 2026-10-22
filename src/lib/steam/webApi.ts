@@ -140,6 +140,14 @@ export interface PlayerSummary {
   avatarfull?: string;
   communityvisibilitystate?: number;
   profileurl?: string;
+  /** Unix seconds of Steam account creation. Only present on public profiles. */
+  timecreated?: number;
+}
+
+export interface GetSteamLevelResponse {
+  response?: {
+    player_level?: number;
+  };
 }
 
 export interface GetPlayerSummariesResponse {
@@ -211,6 +219,12 @@ export function getPlayerSummaries(steamIds: string[]): Promise<GetPlayerSummari
     'v2',
     params,
   );
+}
+
+export function getSteamLevel(steamId: string): Promise<GetSteamLevelResponse> {
+  return steamRequest<GetSteamLevelResponse>('IPlayerService', 'GetSteamLevel', 'v1', {
+    steamid: steamId,
+  });
 }
 
 export function resolveVanityUrl(vanity: string): Promise<ResolveVanityURLResponse> {

@@ -4,6 +4,7 @@ import { achievements, games, users, userAchievements, userGames } from '../db/s
 import { getOwnedGames, getPlayerAchievements } from '../steam/webApi';
 import './steamBudget';
 import { RateLimiter } from './rateLimiter';
+import { fetchProfileExtras } from './profileExtras';
 
 export interface SyncResult {
   /**
@@ -390,7 +391,9 @@ export async function syncLibraryIncremental(
 
   const done = remaining === 0;
   if (done) {
-    await db.update(users).set({ lastSyncedAt: new Date() }).where(eq(users.id, userId));
+    // Once per completed sync (2 Steam calls); a failed fetch keeps the stored values.
+    const extras = await fetchProfileExtras(user[0].steamId);
+    await db.update(users).set({ lastSyncedAt: new Date(), ...extras }).where(eq(users.id, userId));
   }
 
   const result: IncrementalSyncResult = {

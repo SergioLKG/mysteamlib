@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { verifyOpenIdResponse } from '../../../lib/auth/openid';
 import { getPlayerSummaries } from '../../../lib/steam/webApi';
 import '../../../lib/sync/steamBudget';
+import { getProfileExtras } from '../../../lib/sync/profileExtras';
 import { db } from '../../../lib/db/client';
 import { users } from '../../../lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -31,10 +32,12 @@ export const GET: APIRoute = async (context) => {
   }
 
   let profile = null;
+  let extras = null;
   if (process.env.STEAM_API_KEY) {
     try {
       const res = await getPlayerSummaries([steamId]);
       profile = res.response?.players?.[0] ?? null;
+      extras = profile ? await getProfileExtras(profile) : null;
     } catch (e) {
       console.error('getPlayerSummaries failed', e);
       profile = null;
@@ -59,6 +62,7 @@ export const GET: APIRoute = async (context) => {
         personaName: profile?.personaname ?? steamId,
         avatarUrl: profile?.avatarfull ?? null,
         profileVisibility: visibility,
+        ...extras,
       })
       .returning();
     user = inserted[0];
@@ -66,7 +70,9 @@ export const GET: APIRoute = async (context) => {
     profile &&
     (profile.personaname !== user.personaName ||
       profile.avatarfull !== user.avatarUrl ||
-      visibility !== user.profileVisibility)
+      visibility !== user.profileVisibility ||
+      (extras && (extras.steamLevel !== user.steamLevel ||
+        extras.steamCreatedAt?.getTime() !== user.steamCreatedAt?.getTime())))
   ) {
     const updated = await db
       .update(users)
@@ -74,6 +80,7 @@ export const GET: APIRoute = async (context) => {
         personaName: profile.personaname,
         avatarUrl: profile.avatarfull ?? user.avatarUrl,
         profileVisibility: visibility,
+        ...extras,
       })
       .where(eq(users.id, user.id))
       .returning();
