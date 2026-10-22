@@ -1,7 +1,7 @@
 {
   "name": "mysteamlib-app",
   "type": "module",
-  "version": "0.1.0",
+  "version": "1.0.3",
   "engines": {
     "node": ">=24"
   },
