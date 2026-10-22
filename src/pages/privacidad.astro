@@ -43,7 +43,8 @@ const UPDATED = '14 de octubre de 2026';
         <th scope="row">Tu cuenta</th>
         <td>
           SteamID64, nombre de perfil de Steam, URL de tu avatar, si tu perfil es público o
-          privado, fecha de alta, fecha de tu última sincronización y fecha del último intento de
+          privado, tu nivel de Steam y la fecha de creación de tu cuenta de Steam (solo si tu
+          perfil es público), fecha de alta en mysteamlib, fecha de tu última sincronización y fecha del último intento de
           sincronización automática.
         </td>
       </tr>
@@ -105,8 +106,9 @@ const UPDATED = '14 de octubre de 2026';
     </li>
     <li>
       Datos del visor de perfiles de la portada: al buscar un perfil público ahí solo mostramos
-      nombre, avatar, número de juegos y horas. El perfil que consultas no se guarda; solo se
-      registra, con fines de seguridad, la huella cifrada de tu dirección IP descrita arriba.
+      nombre, avatar, nivel de Steam, año de creación de la cuenta, número de juegos y horas. El
+      perfil que consultas no se guarda; solo se registra, con fines de seguridad, la huella
+      cifrada de tu dirección IP descrita arriba.
     </li>
   </ul>
 

@@ -31,6 +31,10 @@ export const users = pgTable(
     profileVisibility: text('profile_visibility', {
       enum: ['public', 'private'],
     }).default('private'),
+    // Steam account level and creation date (not our `createdAt`). Null while
+    // unknown or when the profile is not public.
+    steamLevel: integer('steam_level'),
+    steamCreatedAt: timestamp('steam_created_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
     // Stamped after every daily-cron attempt (success or error); drives cron rotation.
