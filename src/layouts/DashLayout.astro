@@ -16,7 +16,7 @@ interface Props {
 const { title, description, user } = Astro.props;
 ---
 
-<BaseLayout {title} {description}>
+<BaseLayout {title} {description} noindex>
   <style is:global>
     :root {
       color-scheme: dark;

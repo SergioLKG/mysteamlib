@@ -8,10 +8,18 @@ export interface ShelfGame {
   name: string;
   hours: number;
   state: SpineState;
+  /** Steam genres; `null` or missing when the service has no data. */
+  genres?: readonly string[] | null;
+  /** Header image for the tooltip. */
+  image?: string | null;
+  /** Hours in the last two weeks. */
+  recentHours?: number | null;
 }
 
 /** More spines than this stop being legible at 320 px; the legend still counts every game. */
 export const SHELF_MAX_SPINES = 60;
+/** On narrow screens (≤ 520 px) 60 spines are ~3 px wide and outline reads as fill: draw fewer. */
+export const SHELF_MAX_SPINES_NARROW = 40;
 /** Spine height range in % of the shelf. Unplayed games keep the floor so they stay visible. */
 export const SPINE_MIN_HEIGHT = 18;
 export const SPINE_MAX_HEIGHT = 100;

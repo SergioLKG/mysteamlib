@@ -65,6 +65,46 @@
   --coral-48: oklch(48% 0.17 25);
   --coral-72: oklch(72% 0.15 25);
 
+  /* Genre family (shelf spines, legend, title chip): one hue per genre, two steps each (light / dark).
+     Chroma is the sRGB maximum the contrast allows. Hues skip 211-261: blue belongs to the bookmark alone. */
+  --genre-action-50: oklch(50% 0.19 25);
+  --genre-action-72: oklch(72% 0.17 25);
+  --genre-rpg-48: oklch(48% 0.105 60);
+  --genre-rpg-76: oklch(76% 0.16 60);
+  --genre-casual-47: oklch(47% 0.092 100);
+  --genre-casual-82: oklch(82% 0.16 100);
+  --genre-indie-46: oklch(46% 0.135 145);
+  --genre-indie-78: oklch(78% 0.19 145);
+  --genre-strategy-46: oklch(46% 0.076 190);
+  --genre-strategy-78: oklch(78% 0.13 190);
+  --genre-simulation-50: oklch(50% 0.2 290);
+  --genre-simulation-72: oklch(72% 0.155 290);
+  --genre-adventure-50: oklch(50% 0.2 335);
+  --genre-adventure-74: oklch(74% 0.18 335);
+
+  /* Steam level family (level ring only): one colour per decade as on Steam, two steps each (light / dark).
+     50 is blue on purpose (Jakob's law; documented exception in DESIGN.md). */
+  --level-0-56: oklch(56% 0.01 250);
+  --level-0-68: oklch(68% 0.01 250);
+  --level-10-52: oklch(52% 0.2 25);
+  --level-10-66: oklch(66% 0.2 25);
+  --level-20-56: oklch(56% 0.16 45);
+  --level-20-74: oklch(74% 0.15 45);
+  --level-30-56: oklch(56% 0.115 100);
+  --level-30-86: oklch(86% 0.17 98);
+  --level-40-50: oklch(50% 0.13 145);
+  --level-40-68: oklch(68% 0.15 145);
+  --level-50-55: oklch(55% 0.15 255);
+  --level-50-70: oklch(70% 0.14 255);
+  --level-60-52: oklch(52% 0.2 295);
+  --level-60-68: oklch(68% 0.17 295);
+  --level-70-56: oklch(56% 0.22 330);
+  --level-70-72: oklch(72% 0.2 330);
+  --level-80-42: oklch(42% 0.1 10);
+  --level-80-62: oklch(62% 0.1 10);
+  --level-90-52: oklch(52% 0.105 70);
+  --level-90-78: oklch(78% 0.12 75);
+
   /* ==== SEMANTIC COLOUR (what components use) ==== */
 
   /* Surfaces */
@@ -104,6 +144,28 @@
   --color-spine-empty: var(--ink-56);
   --color-spine-played: light-dark(var(--ink-44), var(--ink-70));
   --color-spine-done: var(--color-ok);
+  /* Genre inks: measured 4.73:1 or more on bg, surface and surface-2 in both themes (23/10/2026), so they also
+     work as text (title chip). Always paired with the genre name (legend, tooltip, chip) and with
+     fill-vs-outline for state, so colour is never the only signal. Other genres stay neutral. */
+  --color-genre-action: light-dark(var(--genre-action-50), var(--genre-action-72));
+  --color-genre-rpg: light-dark(var(--genre-rpg-48), var(--genre-rpg-76));
+  --color-genre-casual: light-dark(var(--genre-casual-47), var(--genre-casual-82));
+  --color-genre-indie: light-dark(var(--genre-indie-46), var(--genre-indie-78));
+  --color-genre-strategy: light-dark(var(--genre-strategy-46), var(--genre-strategy-78));
+  --color-genre-simulation: light-dark(var(--genre-simulation-50), var(--genre-simulation-72));
+  --color-genre-adventure: light-dark(var(--genre-adventure-50), var(--genre-adventure-74));
+  /* Steam level ring by decade: >= 3:1 on bg, surface and surface-2 in both themes (measured 23/10/2026).
+     Always next to the number and the word "Nivel", never the only signal. */
+  --color-level-0: light-dark(var(--level-0-56), var(--level-0-68));
+  --color-level-10: light-dark(var(--level-10-52), var(--level-10-66));
+  --color-level-20: light-dark(var(--level-20-56), var(--level-20-74));
+  --color-level-30: light-dark(var(--level-30-56), var(--level-30-86));
+  --color-level-40: light-dark(var(--level-40-50), var(--level-40-68));
+  --color-level-50: light-dark(var(--level-50-55), var(--level-50-70));
+  --color-level-60: light-dark(var(--level-60-52), var(--level-60-68));
+  --color-level-70: light-dark(var(--level-70-56), var(--level-70-72));
+  --color-level-80: light-dark(var(--level-80-42), var(--level-80-62));
+  --color-level-90: light-dark(var(--level-90-52), var(--level-90-78));
   /* "started" = diagonal hatch in the played ink, readable without colour */
   --pattern-started: repeating-linear-gradient(
     45deg,
@@ -223,6 +285,13 @@
     --color-spine-empty: CanvasText;
     --color-spine-played: CanvasText;
     --color-spine-done: Highlight;
+    --color-genre-action: CanvasText;
+    --color-genre-rpg: CanvasText;
+    --color-genre-casual: CanvasText;
+    --color-genre-indie: CanvasText;
+    --color-genre-strategy: CanvasText;
+    --color-genre-simulation: CanvasText;
+    --color-genre-adventure: CanvasText;
     --color-accent-mark: Highlight;
     --color-rule: Canvas;
     --glow-bookmark: none;

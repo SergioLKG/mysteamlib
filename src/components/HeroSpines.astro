@@ -98,7 +98,7 @@ const spines: Array<[number, number, 'solid' | 'outline' | 'halftone']> = [
     padding-block-end: var(--space-3);
     background: var(--color-accent);
     border-color: var(--color-accent-hover);
-    box-shadow: var(--glow-accent);
+    box-shadow: var(--glow-bookmark);
     color: var(--color-on-accent);
   }
   .spine.platinum::before {
@@ -108,11 +108,6 @@ const spines: Array<[number, number, 'solid' | 'outline' | 'halftone']> = [
 
   /* Hover only: the shelf is decorative (aria-hidden), so it takes no focus. */
   @media (hover: hover) {
-    .shelf:hover .spine.platinum {
-      box-shadow:
-        var(--glow-accent),
-        0 0 3rem color-mix(in srgb, var(--color-accent) 45%, transparent);
-    }
     .spine:hover {
       transform: translateY(-0.4rem);
     }
@@ -135,7 +130,7 @@ const spines: Array<[number, number, 'solid' | 'outline' | 'halftone']> = [
   @media (prefers-reduced-motion: reduce) {
     .spine {
       animation: none;
-      transition: box-shadow var(--duration-base) var(--ease-out);
+      transition: none;
     }
     .spine:hover {
       transform: none;
