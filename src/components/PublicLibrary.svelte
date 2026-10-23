@@ -13,12 +13,10 @@
   } from "../lib/publicLibrary/view";
 
   interface Props {
-    gamesCount: number;
-    totalHours: number;
     games: PublicLibraryGame[];
   }
 
-  let { gamesCount, totalHours, games }: Props = $props();
+  let { games }: Props = $props();
 
   const STATES: { value: PublicLibraryState; label: string }[] = [
     { value: "all", label: "Todos" },
@@ -28,7 +26,8 @@
   ];
   const SORTS: { value: PublicLibrarySort; label: string }[] = [
     { value: "hours", label: "Más horas" },
-    { value: "recent", label: "Recientes" },
+    // Not "Recientes": the state filter already uses that word.
+    { value: "recent", label: "Últimas 2 semanas" },
     { value: "name", label: "Nombre" },
   ];
 
@@ -37,7 +36,10 @@
   let genre = $state("");
   let query = $state("");
   let shown = $state(LIBRARY_PAGE_SIZE);
-  let countEl = $state<HTMLParagraphElement>();
+  let scroller = $state<HTMLDivElement>();
+  let items = $state<HTMLLIElement[]>([]);
+  // Hides the bottom inner shadow once there is nothing left to scroll.
+  let atEnd = $state(true);
 
   const genres = $derived(topGenres(games, GENRE_CHIPS_LIMIT));
   const filtered = $derived(
@@ -45,18 +47,35 @@
   );
   const visible = $derived(filtered.slice(0, shown));
 
-  // A new filter starts again from the first batch.
+  function measure() {
+    if (scroller)
+      atEnd =
+        scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+  }
+
+  // New content (filters, «Ver más») or a new size changes whether there is more below.
+  $effect(() => {
+    void visible.length;
+    if (!scroller) return;
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(scroller);
+    if (scroller.firstElementChild) ro.observe(scroller.firstElementChild);
+    return () => ro.disconnect();
+  });
+
+  // A new filter starts again from the first batch, at the top of the box.
   function resetBatch() {
     shown = LIBRARY_PAGE_SIZE;
+    if (scroller) scroller.scrollTop = 0;
   }
 
   async function showMore() {
+    const first = shown;
     shown += LIBRARY_PAGE_SIZE;
-    // «Ver más» unmounts with the last batch: keep the keyboard focus in the list.
-    if (shown >= filtered.length) {
-      await tick();
-      countEl?.focus();
-    }
+    // «Ver más» may unmount with the last batch: the focus goes to the first new game.
+    await tick();
+    items[first]?.focus();
   }
 
   function formatHours(h: number): string {
@@ -67,11 +86,6 @@
 </script>
 
 <section class="library" aria-label="Biblioteca pública">
-  <p class="summary">
-    <strong>{gamesCount.toLocaleString("es-ES")}</strong> juegos ·
-    <strong>{totalHours.toLocaleString("es-ES")}</strong> h jugadas
-  </p>
-
   <div class="controls">
     <div class="row">
       <input
@@ -136,7 +150,7 @@
   {#if filtered.length === 0}
     <p class="count" role="status">No encuentro juegos con estos filtros.</p>
   {:else}
-    <p class="count" tabindex="-1" bind:this={countEl}>
+    <p class="count">
       Mostrando {visible.length.toLocaleString("es-ES")} de {filtered.length.toLocaleString(
         "es-ES",
       )}
@@ -144,31 +158,44 @@
   {/if}
 
   {#if visible.length > 0}
-    <ul class="grid">
-      {#each visible as g (g.appid)}
-        <li class="game">
-          {#if g.headerImageUrl}
-            <img
-              class="cover"
-              src={g.headerImageUrl}
-              alt=""
-              width="460"
-              height="215"
-              loading="lazy"
-              decoding="async"
-            />
-          {:else}
-            <div class="cover cover-empty" aria-hidden="true"></div>
-          {/if}
-          <p class="gname" title={g.name}>{g.name}</p>
-          <p class="ghours">{formatHours(g.hours)}</p>
-        </li>
-      {/each}
-    </ul>
-  {/if}
+    <!-- Contained list (DESIGN.md): its own scroll, reachable with the keyboard, with «Ver más» at the end. -->
+    <div class={["scroll-wrap", { "has-more": !atEnd }]}>
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        class="scroller"
+        role="region"
+        aria-label="Juegos de la biblioteca"
+        tabindex="0"
+        bind:this={scroller}
+        onscroll={measure}
+      >
+        <ul class="grid">
+          {#each visible as g, i (g.appid)}
+            <li class="game" tabindex="-1" bind:this={items[i]}>
+              {#if g.headerImageUrl}
+                <img
+                  class="cover"
+                  src={g.headerImageUrl}
+                  alt=""
+                  width="460"
+                  height="215"
+                  loading="lazy"
+                  decoding="async"
+                />
+              {:else}
+                <div class="cover cover-empty" aria-hidden="true"></div>
+              {/if}
+              <p class="gname" title={g.name}>{g.name}</p>
+              <p class="ghours">{formatHours(g.hours)}</p>
+            </li>
+          {/each}
+        </ul>
 
-  {#if filtered.length > visible.length}
-    <button type="button" class="more" onclick={showMore}> Ver más </button>
+        {#if filtered.length > visible.length}
+          <button type="button" class="more" onclick={showMore}> Ver más </button>
+        {/if}
+      </div>
+    </div>
   {/if}
 </section>
 
@@ -178,16 +205,6 @@
     gap: var(--space-4);
     min-width: 0;
   }
-  .summary {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-  }
-  .summary strong {
-    color: var(--color-text);
-    font-variant-numeric: tabular-nums;
-  }
-
   .controls {
     display: grid;
     gap: var(--space-3);
@@ -278,18 +295,67 @@
     color: var(--color-text-muted);
   }
 
+  .scroll-wrap {
+    position: relative;
+  }
+  /* Inner shadow at the bottom while there is more to scroll (no glow: DESIGN.md). */
+  .scroll-wrap::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    block-size: var(--space-6);
+    border-end-start-radius: var(--radius-sm);
+    border-end-end-radius: var(--radius-sm);
+    background: linear-gradient(
+      to top,
+      color-mix(in oklch, var(--color-bg) 92%, transparent),
+      transparent
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-base) var(--ease-out);
+  }
+  .scroll-wrap.has-more::after {
+    opacity: 1;
+  }
+  /* Below a 667 px phone screen it would be a scroll trap: at most 60 % of the viewport. */
+  .scroller {
+    display: grid;
+    gap: var(--space-4);
+    max-block-size: min(500px, 60svh);
+    padding: 4px;
+    margin: -4px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .scroller:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 0;
+  }
+
+  /* Two columns even at 320 px: one per row would bury the list. */
   .grid {
     margin: 0;
     padding: 0;
     list-style: none;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(10.5rem, calc((100% - var(--space-3)) / 2)), 1fr)
+    );
     gap: var(--space-3);
   }
   .game {
     display: grid;
     gap: var(--space-1);
     min-width: 0;
+    outline: none;
+  }
+  .game:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
   }
   .cover {
     display: block;
@@ -365,7 +431,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .chip {
+    .chip,
+    .scroll-wrap::after {
       transition: none;
     }
   }

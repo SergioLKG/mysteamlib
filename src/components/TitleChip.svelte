@@ -1,13 +1,17 @@
 <svelte:options css="injected" />
 
 <script lang="ts">
+  import Icon from './Icon.svelte';
+
   interface Props {
     label: string;
     /** Why the person has this title; shown on hover, focus and tap. */
     hint: string;
+    /** Ink of the title's genre (`genreInk`): text and border. Measured >= 4.6:1, so it is legible as text. */
+    ink?: string;
   }
 
-  let { label, hint }: Props = $props();
+  let { label, hint, ink }: Props = $props();
 
   const id = $props.id();
   let open = $state(false);
@@ -25,13 +29,16 @@
   <button
     type="button"
     class="chip"
+    style:--chip-ink={ink}
     aria-describedby={id}
     onclick={() => (open = true)}
     onfocus={() => (open = true)}
     onblur={() => (open = false)}
     onkeydown={(e) => { if (e.key === 'Escape') open = false; }}
   >
-    ( {label} )
+    {label}
+    <!-- Hints that there is more behind the chip (the tooltip with the why). -->
+    <Icon name="info" size={14} />
   </button>
   <span {id} role="tooltip" class={['tip', { open }]}>{hint}</span>
 </span>
@@ -43,17 +50,25 @@
     display: inline-flex;
   }
   .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
     margin: 0;
     padding: var(--space-1) var(--space-3);
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid var(--chip-ink, var(--color-border-strong));
     border-radius: var(--radius-pill);
     background: var(--color-surface-2);
-    color: var(--color-text-body);
+    color: var(--chip-ink, var(--color-text-body));
     font: inherit;
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
     white-space: nowrap;
     cursor: help;
+  }
+  @media (max-width: 520px) {
+    .chip {
+      min-block-size: 2.75rem;
+    }
   }
   .chip:focus-visible {
     outline: 2px solid var(--color-focus);

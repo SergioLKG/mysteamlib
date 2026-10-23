@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import Icon from './Icon.svelte';
   import PublicLibrary from './PublicLibrary.svelte';
   import LibraryCard from './LibraryCard.svelte';
@@ -33,6 +34,7 @@
 
   // Only the latest lookup may write state: a newer submit aborts the older one.
   let controller: AbortController | null = null;
+  let resultEl = $state<HTMLDivElement>();
 
   // The public lookup only knows hours, so the shelf has two states (DESIGN.md, Data display).
   const shelfGames = $derived<ShelfGame[]>(
@@ -49,19 +51,30 @@
   const stats = $derived(genreStats(shelfGames));
   // Null until the library is loaded (no games, no coverage), so the private branch never shows one.
   const nickname = $derived(userTitle(stats));
+  const unplayed = $derived(library ? shelfGames.filter((g) => g.state === 'empty').length : null);
   // One filled CTA per view: once there are results the CTA is the dashboard one.
-  // The filled CTA moves to the result's own box; without a library there is none, so search stays filled.
-  const hasResult = $derived(phase === 'ready' && !!library);
+  // The filled CTA moves to the result's own box; without games there is none, so search stays filled.
+  const hasResult = $derived(phase === 'ready' && !!library && library.gamesCount > 0);
   const ctaHref = $derived(user ? '/dashboard' : '/api/auth/login?next=/dashboard');
   const status = $derived(
     phase === 'loading'
       ? 'Leyendo el perfil de Steam…'
       : phase === 'ready' && library
-        ? `Biblioteca cargada: ${library.gamesCount} juegos.`
+        ? `Biblioteca cargada: ${library.gamesCount} juegos.${nickname ? ` Título: ${nickname.label}.` : ''}`
         : phase === 'private'
           ? 'No se pueden leer los juegos de este perfil.'
           : '',
   );
+
+  // The card must land on screen after a submit: below the fold on mobile, or above it after a scroll.
+  async function revealResult() {
+    await tick();
+    if (!resultEl) return;
+    const { top } = resultEl.getBoundingClientRect();
+    if (top >= 0 && top < innerHeight * 0.5) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    resultEl.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
 
   async function readJson<T>(res: Response): Promise<T | null> {
     try {
@@ -110,6 +123,8 @@
     profile = null;
     library = null;
     libraryStatus = 'idle';
+    // Bring the skeleton into view now, so the wait is visible and the page moves only once.
+    revealResult();
 
     try {
       const res = await fetch('/api/profiles/lookup', {
@@ -144,16 +159,19 @@
   }
 </script>
 
-{#snippet who(p: Profile, gamesCount: number | null = null, totalHours: number | null = null)}
+{#snippet who(p: Profile, lib: Library | null = null)}
   <div class="who">
     <LibraryCard
       personaName={p.personaName}
       avatarUrl={p.avatarUrl}
       steamLevel={p.steamLevel}
       steamCreatedAt={p.steamCreatedAt}
-      {gamesCount}
-      {totalHours}
+      gamesCount={lib?.gamesCount ?? null}
+      totalHours={lib?.totalHours ?? null}
+      unplayedCount={lib && lib.gamesCount > 0 ? unplayed : null}
       title={nickname}
+      discoverHref={hasResult && !user ? '#cta-box' : undefined}
+      pending={!lib && libraryStatus === 'loading'}
     />
     <a class="steam-link" href={p.profileUrl} target="_blank" rel="noopener noreferrer">
       Ver perfil en Steam
@@ -167,7 +185,7 @@
   <form class="idle-form" onsubmit={lookup}>
     <label class="field-label" for="profile-input">
       Tu perfil de Steam
-      <span class="hint">URL, nick o SteamID64</span>
+      <span class="hint">Pega el enlace de tu perfil</span>
     </label>
     <div class="field-row">
       <input
@@ -179,22 +197,35 @@
         placeholder="https://steamcommunity.com/id/tu-nick"
         class="lookup-input"
         bind:value={input}
-        disabled={phase === 'loading'}
+        readonly={phase === 'loading'}
       />
       <button class={['lookup-btn', hasResult && 'secondary']} type="submit" disabled={!input.trim() || phase === 'loading'}>
         {phase === 'loading' ? 'Leyendo…' : 'Ver biblioteca'}
       </button>
     </div>
+    <details class="where">
+      <summary>¿Dónde lo encuentro?</summary>
+      <ul>
+        <li><strong>Móvil</strong>: en la app de Steam, abre tu perfil y comparte o copia su enlace.</li>
+        <li><strong>PC</strong>: abre tu perfil en Steam y copia la dirección de la página.</li>
+      </ul>
+    </details>
   </form>
 
   <p class="sr-only" role="status">{status}</p>
 
-  <div class="result-region" aria-busy={phase === 'loading' || libraryStatus === 'loading'}>
+  <div class="result-region" bind:this={resultEl} aria-busy={phase === 'loading' || libraryStatus === 'loading'}>
     {#if phase === 'loading'}
+      <!-- Same shape as LibraryCard, so the result does not jump in. -->
       <div class="skeleton" aria-hidden="true">
         <div class="sk-row">
           <div class="sk-avatar"></div>
-          <div><div class="sk-line w70"></div><div class="sk-line w40"></div></div>
+          <div><div class="sk-line w70"></div><div class="sk-line w40"></div><div class="sk-line w55"></div></div>
+        </div>
+        <div class="sk-stats">
+          {#each { length: 3 } as _, i (i)}
+            <div class="sk-stat"></div>
+          {/each}
         </div>
       </div>
 
@@ -209,27 +240,25 @@
         {@render who(profile)}
         <p class="lookup-msg">
           {#if profile.visibility === 'private'}
-            Este perfil es <strong>privado</strong>: Steam no deja leer sus datos. Abre tu privacidad
-            («Perfil de juego» → siempre público) en la configuración de tu cuenta y vuelve.
+            Este perfil es <strong>privado</strong>: Steam no deja leer sus datos. Si es el tuyo, pon
+            «Mi perfil» como público en la privacidad de Steam y vuelve a probar.
           {:else}
-            El perfil es público, pero <strong>los detalles del juego están ocultos</strong>. Ponlos
-            como públicos en la privacidad de tu cuenta de Steam y vuelve a probar.
+            El perfil es público, pero <strong>los detalles del juego están ocultos</strong>. Si es el
+            tuyo, ponlos como públicos en la privacidad de Steam y vuelve a probar.
           {/if}
         </p>
       </div>
 
     {:else if profile && phase === 'ready'}
       <div class="profile">
-        {@render who(profile, library?.gamesCount ?? null, library?.totalHours ?? null)}
+        {@render who(profile, library)}
 
-        {#if library}
+        {#if library && library.gamesCount === 0}
+          <p class="lookup-msg">Este perfil no tiene juegos en su biblioteca.</p>
+        {:else if library}
           {#key library.steamId}
             <ShelfChart games={shelfGames} genres={stats} title={`Estantería de ${profile.personaName}`} />
-            <PublicLibrary
-              gamesCount={library.gamesCount}
-              totalHours={library.totalHours}
-              games={library.games}
-            />
+            <PublicLibrary games={library.games} />
           {/key}
         {:else if libraryStatus === 'error'}
           <div class="library-error">
@@ -247,8 +276,8 @@
         {/if}
       </div>
 
-      {#if library}
-        <div class="cta-box cta-box-home">
+      {#if hasResult}
+        <div class="cta-box cta-box-home" id="cta-box">
           <p>
             <strong>Esto es solo el aperitivo.</strong> Con tu cuenta ves el estado de tus logros y qué juego te queda más cerca del platino.
           </p>
@@ -310,15 +339,17 @@
     font-size: var(--text-base);
     transition: border-color var(--duration-base) var(--ease-out);
   }
-  .lookup-input:hover:not(:disabled) {
+  .lookup-input:hover:not([readonly]) {
     border-color: var(--color-text-muted);
   }
   .lookup-input:focus-visible {
     outline-color: var(--color-focus);
   }
-  .lookup-input:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
+  /* Read-only, not disabled, while loading: it keeps the focus and stays readable. */
+  .lookup-input[readonly] {
+    background: var(--color-surface-2);
+    color: var(--color-text-body);
+    cursor: progress;
   }
   .lookup-input::placeholder {
     color: var(--color-text-muted);
@@ -364,6 +395,34 @@
     outline-offset: 2px;
   }
 
+  .where {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+  /* Keeps `list-item` (the disclosure marker); the padding takes it to a 44 px target. */
+  .where summary {
+    inline-size: fit-content;
+    padding-block: var(--space-3);
+    color: var(--color-accent-text);
+    cursor: pointer;
+  }
+  .where summary:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  .where ul {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding-inline-start: var(--space-5);
+    max-inline-size: 60ch;
+    line-height: var(--leading-body);
+  }
+  .where strong {
+    color: var(--color-text-body);
+  }
+
   .sr-only {
     position: absolute;
     inline-size: 1px;
@@ -375,6 +434,11 @@
     white-space: nowrap;
   }
 
+  /* Scroll targets (the result after a submit, «+1 título» → CTA) clear the sticky header. */
+  .result-region,
+  .cta-box {
+    scroll-margin-block-start: calc(var(--header-h, 3.875rem) + 1rem);
+  }
   .result-region {
     min-height: 8rem;
   }
@@ -394,6 +458,7 @@
   .steam-link {
     display: inline-flex;
     align-items: center;
+    min-block-size: 2.75rem;
     gap: var(--space-1);
     justify-self: start;
     font-size: var(--text-sm);
@@ -521,7 +586,18 @@
     background: var(--color-surface-2);
   }
   .w70 { width: 70%; }
+  .w55 { width: 55%; }
   .w40 { width: 40%; }
+  .sk-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+  .sk-stat {
+    block-size: 3.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+  }
   .sk-games {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
@@ -538,12 +614,12 @@
     50% { opacity: 1; }
     100% { opacity: 0.55; }
   }
-  :is(.skeleton, .sk-games) :is(.sk-avatar, .sk-line, .sk-game) {
+  :is(.skeleton, .sk-games) :is(.sk-avatar, .sk-line, .sk-stat, .sk-game) {
     animation: shimmer 1.4s var(--ease-in-out) infinite;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    :is(.skeleton, .sk-games) :is(.sk-avatar, .sk-line, .sk-game) {
+    :is(.skeleton, .sk-games) :is(.sk-avatar, .sk-line, .sk-stat, .sk-game) {
       animation: none;
     }
     .lookup-btn,

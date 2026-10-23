@@ -1,10 +1,12 @@
 <svelte:options css="injected" />
 
 <script lang="ts">
+  import { MediaQuery } from 'svelte/reactivity';
   import Spine from './Spine.svelte';
   import { NEUTRAL_INK, gameInk, genreInk, type GenreStats } from '../lib/ui/genres';
   import {
     SHELF_MAX_SPINES,
+    SHELF_MAX_SPINES_NARROW,
     SPINE_STATE_LABEL,
     countStates,
     sampleShelf,
@@ -32,8 +34,13 @@
 
   let { games, markedId, markedLabel, title, genres }: Props = $props();
 
+  // Same breakpoint as the lookup's mobile layout.
+  const narrow = new MediaQuery('max-width: 520px');
+  const max = $derived(narrow.current ? SHELF_MAX_SPINES_NARROW : SHELF_MAX_SPINES);
+
+  // The summary counts the whole library; the key only names the states that are actually drawn.
   const counts = $derived(countStates(games));
-  const shelf = $derived(sampleShelf(games, { keepId: markedId }));
+  const shelf = $derived(sampleShelf(games, { max, keepId: markedId }));
   const heights = $derived(spineHeights(shelf));
   // Neutral games keep the plain state colours instead of the darker "played" ink.
   const inks = $derived(
@@ -42,8 +49,9 @@
       return ink === NEUTRAL_INK ? undefined : ink;
     }),
   );
-  const legend = $derived((Object.keys(SPINE_STATE_LABEL) as SpineState[]).filter((s) => counts[s] > 0));
-  const cut = $derived(games.length > SHELF_MAX_SPINES);
+  const drawn = $derived(countStates(shelf));
+  const legend = $derived((Object.keys(SPINE_STATE_LABEL) as SpineState[]).filter((s) => drawn[s] > 0));
+  const cut = $derived(games.length > max);
   const topGenres = $derived(genres?.genres.slice(0, LEGEND_GENRES) ?? []);
 
   const hoursFmt = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 });
@@ -114,6 +122,12 @@
 <svelte:window onpointerdown={outside} />
 
 <figure class="shelf-chart" aria-label={title}>
+  <!-- First, so a screen reader hears the summary before the spines; sighted users get the key below. -->
+  <figcaption class="sr-only">
+    {shelfSummary(counts)}
+    {#if cut}Se dibujan los {max} con más horas.{/if}
+    Altura = horas jugadas. Recórrela con el cursor, el dedo o las flechas para ver cada juego.
+  </figcaption>
   <div class="stage">
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
@@ -145,7 +159,7 @@
             marked={game.id === markedId}
             label={markedLabel}
             ink={inks[i]}
-            active={active === i}
+            active={active === null ? i === 0 : active === i}
           />
         </button>
       {/each}
@@ -175,14 +189,15 @@
     {/if}
   </div>
 
-  <ul class="legend">
+  <!-- Key of the drawn states only (outline vs fill); the counts live in the card. -->
+  <ul class="key" aria-hidden="true">
     {#each legend as state (state)}
       <li>
-        <span class="swatch" aria-hidden="true"><Spine {state} height={100} /></span>
-        <span class="count">{counts[state].toLocaleString('es-ES')}</span>
+        <span class="swatch"><Spine {state} height={100} /></span>
         {SPINE_STATE_LABEL[state]}
       </li>
     {/each}
+    {#if cut}<li>Altura = horas · los {max} con más horas</li>{/if}
   </ul>
 
   {#if topGenres.length > 0 && genres}
@@ -207,11 +222,6 @@
     </div>
   {/if}
 
-  <figcaption>
-    {shelfSummary(counts)}
-    {#if cut}Se dibujan los {SHELF_MAX_SPINES} con más horas.{/if}
-    Altura = horas jugadas. Recórrela con el cursor, el dedo o las flechas para ver cada juego.
-  </figcaption>
 </figure>
 
 <style>
@@ -358,11 +368,43 @@
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
   }
-  .note,
-  figcaption {
+  .key {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+  .key li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .note {
     margin: 0;
     color: var(--color-text-muted);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
+    font-style: italic;
+  }
+  .sr-only {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  /* Mobile: a compact tooltip (no cover) so it hides less of the card while dragging. */
+  @media (max-width: 520px) {
+    .cover {
+      display: none;
+    }
   }
   @media (min-width: 900px) {
     .shelf {
