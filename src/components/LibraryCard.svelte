@@ -2,6 +2,8 @@
 
 <script lang="ts">
   import StatFigure from './StatFigure.svelte';
+  import TitleChip from './TitleChip.svelte';
+  import type { UserTitle } from '../lib/ui/genres';
 
   interface Props {
     personaName: string;
@@ -12,9 +14,19 @@
     steamCreatedAt?: string | null;
     gamesCount?: number | null;
     totalHours?: number | null;
+    /** Nickname from the most played genre; omitted when the data does not support one. */
+    title?: UserTitle | null;
   }
 
-  let { personaName, avatarUrl, steamLevel = null, steamCreatedAt = null, gamesCount = null, totalHours = null }: Props = $props();
+  let {
+    personaName,
+    avatarUrl,
+    steamLevel = null,
+    steamCreatedAt = null,
+    gamesCount = null,
+    totalHours = null,
+    title = null,
+  }: Props = $props();
 
   const memberSince = $derived(steamCreatedAt ? new Date(steamCreatedAt).getUTCFullYear() : null);
   // A group with no data is left out of the card instead of showing "Sin dato" (DESIGN.md).
@@ -36,7 +48,10 @@
     {:else}
       <span class="avatar" aria-hidden="true"></span>
     {/if}
-    <p class="name">{personaName}</p>
+    <div class="id">
+      <p class="name">{personaName}</p>
+      {#if title}<TitleChip label={title.label} hint={title.hint} />{/if}
+    </div>
   </div>
   {#if stats.length > 0}
     <div class="stats">
@@ -49,6 +64,8 @@
 
 <style>
   .card {
+    /* Anchor of the title tooltip (TitleChip). */
+    position: relative;
     display: grid;
     gap: var(--space-4);
     padding: var(--space-4);
@@ -70,6 +87,13 @@
     border-radius: var(--radius-md);
     background: var(--color-surface-2);
     object-fit: cover;
+  }
+  .id {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    min-inline-size: 0;
   }
   .name {
     margin: 0;

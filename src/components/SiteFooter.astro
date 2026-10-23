@@ -6,10 +6,22 @@ interface Props {
 
 const { contained = true } = Astro.props;
 const year = new Date().getFullYear();
+
+// Spine heights in %, static art with no data.
+const MARKED_INDEX = 5;
+const spines = [60, 85, 70, 95, 65, 80, 55, 90, 72, 62];
 ---
 
-<footer class="site-footer">
+<footer class="site-footer ruled">
   <div class:list={['footer-inner', { contained }]}>
+    <!-- Decorative shelf silhouette: one spine is marked, without glow (it shows on every page). -->
+    <div class="shelf" aria-hidden="true">
+      {
+        spines.map((h, i) => (
+          <span class:list={['spine', { marked: i === MARKED_INDEX }]} style={`--h:${h};`} />
+        ))
+      }
+    </div>
     <nav aria-label="Enlaces legales">
       <a href="/privacidad">Política de privacidad</a>
       <a href="/terminos">Términos de uso</a>
@@ -26,7 +38,8 @@ const year = new Date().getFullYear();
   .site-footer {
     margin-top: 4rem;
     border-top: 1px solid var(--border, var(--color-border));
-    background: color-mix(in srgb, var(--bg, var(--color-bg)) 60%, transparent);
+    /* background-color, not the shorthand: it would wipe the `.ruled` image. */
+    background-color: color-mix(in srgb, var(--bg, var(--color-bg)) 60%, transparent);
   }
   .footer-inner {
     display: grid;
@@ -36,6 +49,28 @@ const year = new Date().getFullYear();
   .footer-inner.contained {
     max-width: min(76rem, calc(100vw - 2rem));
     margin: 0 auto;
+  }
+  .shelf {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.25rem;
+    block-size: 2.5rem;
+    max-inline-size: 16rem;
+    border-block-end: 2px solid var(--color-border-strong);
+  }
+  .spine {
+    flex: 1 1 0;
+    min-inline-size: 0;
+    block-size: calc(var(--h) * 1%);
+    border: 1px solid var(--color-border);
+    border-block-end: 0;
+    border-start-start-radius: var(--radius-sm);
+    border-start-end-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+  }
+  .spine.marked {
+    background: var(--color-accent-mark);
+    border-color: var(--color-accent-mark);
   }
   nav {
     display: flex;

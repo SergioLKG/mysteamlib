@@ -65,6 +65,23 @@
   --coral-48: oklch(48% 0.17 25);
   --coral-72: oklch(72% 0.15 25);
 
+  /* Genre family (shelf spines and legend): one hue per genre, two steps each (light / dark).
+     Hues skip 211-261: blue belongs to the bookmark alone. */
+  --genre-action-47: oklch(47% 0.15 20);
+  --genre-action-74: oklch(74% 0.13 20);
+  --genre-rpg-47: oklch(47% 0.12 60);
+  --genre-rpg-74: oklch(74% 0.13 60);
+  --genre-casual-47: oklch(47% 0.10 100);
+  --genre-casual-74: oklch(74% 0.13 100);
+  --genre-indie-47: oklch(47% 0.12 145);
+  --genre-indie-74: oklch(74% 0.14 145);
+  --genre-strategy-47: oklch(47% 0.09 185);
+  --genre-strategy-74: oklch(74% 0.10 185);
+  --genre-simulation-47: oklch(47% 0.09 215);
+  --genre-simulation-74: oklch(74% 0.09 215);
+  --genre-adventure-47: oklch(47% 0.12 305);
+  --genre-adventure-74: oklch(74% 0.11 305);
+
   /* ==== SEMANTIC COLOUR (what components use) ==== */
 
   /* Surfaces */
@@ -104,6 +121,15 @@
   --color-spine-empty: var(--ink-56);
   --color-spine-played: light-dark(var(--ink-44), var(--ink-70));
   --color-spine-done: var(--color-ok);
+  /* Genre inks: measured 4.6:1 or more on bg, surface and surface-2 in both themes. Always paired with the genre name (legend, tooltip) and with
+     fill-vs-outline for state, so colour is never the only signal. Other genres stay neutral. */
+  --color-genre-action: light-dark(var(--genre-action-47), var(--genre-action-74));
+  --color-genre-rpg: light-dark(var(--genre-rpg-47), var(--genre-rpg-74));
+  --color-genre-casual: light-dark(var(--genre-casual-47), var(--genre-casual-74));
+  --color-genre-indie: light-dark(var(--genre-indie-47), var(--genre-indie-74));
+  --color-genre-strategy: light-dark(var(--genre-strategy-47), var(--genre-strategy-74));
+  --color-genre-simulation: light-dark(var(--genre-simulation-47), var(--genre-simulation-74));
+  --color-genre-adventure: light-dark(var(--genre-adventure-47), var(--genre-adventure-74));
   /* "started" = diagonal hatch in the played ink, readable without colour */
   --pattern-started: repeating-linear-gradient(
     45deg,
@@ -223,6 +249,13 @@
     --color-spine-empty: CanvasText;
     --color-spine-played: CanvasText;
     --color-spine-done: Highlight;
+    --color-genre-action: CanvasText;
+    --color-genre-rpg: CanvasText;
+    --color-genre-casual: CanvasText;
+    --color-genre-indie: CanvasText;
+    --color-genre-strategy: CanvasText;
+    --color-genre-simulation: CanvasText;
+    --color-genre-adventure: CanvasText;
     --color-accent-mark: Highlight;
     --color-rule: Canvas;
     --glow-bookmark: none;

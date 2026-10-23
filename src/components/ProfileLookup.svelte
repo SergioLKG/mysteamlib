@@ -1,6 +1,10 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import PublicLibrary from './PublicLibrary.svelte';
+  import LibraryCard from './LibraryCard.svelte';
+  import ShelfChart from './ShelfChart.svelte';
+  import { genreStats, userTitle } from '../lib/ui/genres';
+  import type { ShelfGame } from '../lib/ui/shelf';
   import type { ProfileLookupPayload } from '../pages/api/profiles/lookup';
   import type { PublicLibraryPayload } from '../pages/api/profiles/[steamId]/library';
 
@@ -30,6 +34,24 @@
   // Only the latest lookup may write state: a newer submit aborts the older one.
   let controller: AbortController | null = null;
 
+  // The public lookup only knows hours, so the shelf has two states (DESIGN.md, Data display).
+  const shelfGames = $derived<ShelfGame[]>(
+    library?.games.map((g) => ({
+      id: g.appid,
+      name: g.name,
+      hours: g.hours,
+      state: g.hours > 0 ? 'played' : 'empty',
+      genres: g.genres,
+      image: g.headerImageUrl,
+      recentHours: g.recentHours,
+    })) ?? [],
+  );
+  const stats = $derived(genreStats(shelfGames));
+  // Null until the library is loaded (no games, no coverage), so the private branch never shows one.
+  const nickname = $derived(userTitle(stats));
+  // One filled CTA per view: once there are results the CTA is the dashboard one.
+  // The filled CTA moves to the result's own box; without a library there is none, so search stays filled.
+  const hasResult = $derived(phase === 'ready' && !!library);
   const ctaHref = $derived(user ? '/dashboard' : '/api/auth/login?next=/dashboard');
   const status = $derived(
     phase === 'loading'
@@ -122,19 +144,22 @@
   }
 </script>
 
-{#snippet who(p: Profile)}
+{#snippet who(p: Profile, gamesCount: number | null = null, totalHours: number | null = null)}
   <div class="who">
-    {#if p.avatarUrl}
-      <img class="avatar" src={p.avatarUrl} alt="" width="64" height="64" />
-    {/if}
-    <div class="who-info">
-      <p class="persona">{p.personaName}</p>
-      <a class="steam-link" href={p.profileUrl} target="_blank" rel="noopener noreferrer">
-        Ver perfil en Steam
-        <Icon name="external-link" size={14} />
-        <span class="sr-only">(se abre en una pestaña nueva)</span>
-      </a>
-    </div>
+    <LibraryCard
+      personaName={p.personaName}
+      avatarUrl={p.avatarUrl}
+      steamLevel={p.steamLevel}
+      steamCreatedAt={p.steamCreatedAt}
+      {gamesCount}
+      {totalHours}
+      title={nickname}
+    />
+    <a class="steam-link" href={p.profileUrl} target="_blank" rel="noopener noreferrer">
+      Ver perfil en Steam
+      <Icon name="external-link" size={14} />
+      <span class="sr-only">(se abre en una pestaña nueva)</span>
+    </a>
   </div>
 {/snippet}
 
@@ -156,7 +181,7 @@
         bind:value={input}
         disabled={phase === 'loading'}
       />
-      <button class="lookup-btn" type="submit" disabled={!input.trim() || phase === 'loading'}>
+      <button class={['lookup-btn', hasResult && 'secondary']} type="submit" disabled={!input.trim() || phase === 'loading'}>
         {phase === 'loading' ? 'Leyendo…' : 'Ver biblioteca'}
       </button>
     </div>
@@ -180,7 +205,7 @@
       <p class="lookup-msg error-msg" role="alert">{message}</p>
 
     {:else if profile && phase === 'private'}
-      <div class="profile-card">
+      <div class="profile">
         {@render who(profile)}
         <p class="lookup-msg">
           {#if profile.visibility === 'private'}
@@ -194,11 +219,12 @@
       </div>
 
     {:else if profile && phase === 'ready'}
-      <div class="profile-card">
-        {@render who(profile)}
+      <div class="profile">
+        {@render who(profile, library?.gamesCount ?? null, library?.totalHours ?? null)}
 
         {#if library}
           {#key library.steamId}
+            <ShelfChart games={shelfGames} genres={stats} title={`Estantería de ${profile.personaName}`} />
             <PublicLibrary
               gamesCount={library.gamesCount}
               totalHours={library.totalHours}
@@ -224,7 +250,7 @@
       {#if library}
         <div class="cta-box cta-box-home">
           <p>
-            <strong>Esto es solo el aperitivo.</strong> Con tu cuenta ves el estado de tus logros, qué juego conviene platinar primero, propositos de año nuevo y mucho más.
+            <strong>Esto es solo el aperitivo.</strong> Con tu cuenta ves el estado de tus logros y qué juego te queda más cerca del platino.
           </p>
           {#if user}
             <a class="dash-cta" href={ctaHref}>Ir a mi dashboard</a>
@@ -318,6 +344,14 @@
   .lookup-btn:hover:not(:disabled) {
     background: var(--color-accent-hover);
   }
+  .lookup-btn.secondary {
+    border-color: var(--color-border-strong);
+    background: transparent;
+    color: var(--color-text);
+  }
+  .lookup-btn.secondary:hover:not(:disabled) {
+    background: var(--color-surface-2);
+  }
   .lookup-btn:active:not(:disabled) {
     transform: translateY(1px);
   }
@@ -345,40 +379,17 @@
     min-height: 8rem;
   }
 
-  .profile-card {
+  .profile {
     display: grid;
-    gap: var(--space-4);
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-card);
+    gap: var(--space-5);
   }
   .who {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-  }
-  .avatar {
-    border-radius: var(--radius-md);
-    width: 64px;
-    height: 64px;
-    box-shadow: 0 0 0 2px var(--color-accent);
-  }
-  .who-info {
     display: grid;
-    gap: var(--space-1);
-    min-width: 0;
+    gap: var(--space-2);
+    justify-items: start;
   }
-  .persona {
-    margin: 0;
-    font-size: var(--text-lg);
-    font-weight: var(--weight-display);
-    letter-spacing: var(--tracking-display);
-    color: var(--color-text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .who > :global(.card) {
+    justify-self: stretch;
   }
   .steam-link {
     display: inline-flex;
@@ -552,7 +563,6 @@
     .lookup-btn {
       width: 100%;
     }
-    .profile-card,
     .cta-box {
       padding: var(--space-4);
     }

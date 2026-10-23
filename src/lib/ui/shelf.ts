@@ -8,6 +8,12 @@ export interface ShelfGame {
   name: string;
   hours: number;
   state: SpineState;
+  /** Steam genres; `null` or missing when the service has no data. */
+  genres?: readonly string[] | null;
+  /** Header image for the tooltip. */
+  image?: string | null;
+  /** Hours in the last two weeks. */
+  recentHours?: number | null;
 }
 
 /** More spines than this stop being legible at 320 px; the legend still counts every game. */

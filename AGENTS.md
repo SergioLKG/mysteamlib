@@ -32,7 +32,7 @@ Astro 7 SSR + `@astrojs/vercel` (Hobby) · Svelte 5 islands (runes) · Neon Post
 1. **Never call Steam / Store / HLTB at page-render time.** DB first, filled by sync jobs (`src/lib/sync`). The only exception is the public profile lookup (no DB writes).
 2. Sync jobs are **idempotent, resumable and batched**: the serverless timeout can kill any run.
 3. `vercel.json` = **`crons` only**. Never `functions`/`rewrites`/`routes` (they break the adapter → 405).
-4. Endpoints only in `src/pages/api/**` with `export const prerender = false;`. No root `/api`.
+4. Endpoints only in `src/pages/api/**` with `export const prerender = false;`. No root `/api`. Exception: `robots.txt`, `sitemap.xml` and `manifest.webmanifest` live in `src/pages/` root with `prerender = true`.
 5. New private route → add it to `src/middleware.ts`. Use `locals.user.userId`, never a client-supplied id.
 6. Data queries filter, sort and aggregate in **SQL** (`src/lib/db/queries`). Exception: `/platino` filters client-side; keep `buildView` (`src/lib/platinum/view.ts`) and `library.ts` semantically identical.
 7. Unknown data is `null` ("Sin dato"), sorted last. Never invent numbers.

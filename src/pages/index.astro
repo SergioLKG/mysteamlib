@@ -3,93 +3,191 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import HeroSpines from '../components/HeroSpines.astro';
 import Icon from '../components/Icon.astro';
+import Tag from '../components/Tag.svelte';
 import ProfileLookup from '../components/ProfileLookup.svelte';
 
 const user = Astro.locals.user;
-const title = 'mysteamlib: elige qué jugar de tu biblioteca de Steam';
+const title = 'Biblioteca de Steam y tu próximo platino | mysteamlib';
 const description =
-  'Pega tu perfil de Steam y mira tu biblioteca pública al momento. Inicia sesión con Steam para ver qué juegos tienes más cerca de platinar.';
+  'Busca tu perfil de Steam y ve tu biblioteca ordenada por horas. Inicia sesión y descubre qué juego te queda más cerca del 100 % de logros.';
+
+const home = new URL('/', Astro.site).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', name: 'mysteamlib', url: home, inLanguage: 'es' },
+    {
+      '@type': 'WebApplication',
+      name: 'mysteamlib',
+      url: home,
+      description,
+      applicationCategory: 'UtilitiesApplication',
+      operatingSystem: 'Web',
+      inLanguage: 'es',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    },
+  ],
+};
 
 const loginHref = '/api/auth/login?next=';
 const toolHref = (path: string) => (user ? path : `${loginHref}${path}`);
 
-// One capsule per tool. Flip `ready` when a tool ships (decisiones A17); unbuilt ones stay "Próximamente".
+// One capsule per tool. Flip `ready` when a tool ships (decisiones A17); unbuilt ones stay "En camino".
 const tools = [
   {
-    icon: 'trophy',
     title: 'Mi próximo platino',
     desc: 'Tus juegos ordenados por lo cerca que estás de platinarlos.',
     ready: true,
     href: toolHref('/platino'),
   },
   {
-    icon: 'gamepad-2',
     title: 'Mi biblioteca',
     desc: 'Tu biblioteca de Steam con filtros que Steam no tiene.',
     ready: false,
     href: null,
   },
 ] as const;
+
+const faqs = [
+  {
+    q: '¿Qué datos usa y es seguro?',
+    a: 'Solo lo que tu perfil de Steam hace público: juegos, horas y logros. Para entrar usas el inicio de sesión de Steam, así que mysteamlib nunca ve tu contraseña. Si tu perfil es privado, Steam no deja leer sus datos.',
+  },
+  {
+    q: '¿Cómo se elige mi próximo platino?',
+    a: 'Se combinan los logros que te faltan, lo raros que son y las horas estimadas de HowLongToBeat. Cuanto menos esfuerzo falta para el 100 %, más arriba queda el juego.',
+  },
+  {
+    q: '¿Tiene relación con Valve?',
+    a: 'No. mysteamlib es un proyecto personal, sin relación con Valve ni con Steam. Los datos se muestran «tal cual» y los tiempos son estimaciones.',
+  },
+];
+
+const trust = [
+  { icon: 'lock', text: 'Inicio de sesión con Steam: mysteamlib no ve tu contraseña.' },
+  { icon: 'search', text: 'Buscar un perfil no guarda su biblioteca.' },
+  { icon: 'check', text: 'Gratis y sin relación con Valve.' },
+] as const;
 ---
 
-<BaseLayout {title} {description} themed>
+<BaseLayout {title} {description} {jsonLd} themed>
   <SiteHeader {user} themeToggle />
 
-  <main id="main-content" class="page">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="pitch">
-        <p class="eyebrow">Para tu biblioteca de Steam</p>
-        <h1 id="hero-title">
-          Elige <span class="em">qué jugar</span> de tu biblioteca de Steam
-        </h1>
-        <p class="lede">Pega tu perfil y mira tu biblioteca. Sin registrarte.</p>
-        <div class="hero-cta">
-          <a class="cta" href={toolHref('/dashboard')}>Ir a mi dashboard</a>
-          <a class="cta ghost" href="#herramientas">Herramientas</a>
+  <main id="main-content">
+    <section class="hero ruled" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="pitch">
+          <p class="eyebrow" data-ruled>Para tu biblioteca de Steam</p>
+          <h1 id="hero-title" data-ruled>
+            Elige <span class="em">qué jugar</span> de tu biblioteca de Steam
+          </h1>
+          <p class="lede" data-ruled>Pega tu perfil y mira tu biblioteca. Sin registrarte.</p>
+        </div>
+
+        <div class="shelf-slot">
+          <HeroSpines />
         </div>
       </div>
+    </section>
 
-      <div class="shelf-slot">
-        <HeroSpines />
-      </div>
-
-      <div class="lookup-slot">
+    <div class="wrap stack">
+      <section class="lookup-slot" aria-label="Buscar un perfil de Steam">
         <ProfileLookup user={!!user} client:load />
-      </div>
-    </section>
+      </section>
 
-    <section id="herramientas" class="tools" aria-labelledby="tools-title">
-      <h2 id="tools-title">Mis herramientas</h2>
-      <ul class="capsules">
-        {tools.map((t) => (
-          <li>
-            {t.ready ? (
-              <a class="capsule" href={t.href}>
-                <span class="capsule-art"><Icon name={t.icon} size={40} /></span>
-                <span class="capsule-body">
-                  <span class="capsule-tag">Con tu cuenta</span>
-                  <span class="capsule-title">{t.title}</span>
-                  <span class="capsule-desc">{t.desc}</span>
-                </span>
-              </a>
-            ) : (
-              <div class="capsule soon">
-                <span class="capsule-art"><Icon name={t.icon} size={40} /></span>
-                <span class="capsule-body">
-                  <span class="capsule-tag">Próximamente</span>
-                  <span class="capsule-title">{t.title}</span>
-                  <span class="capsule-desc">{t.desc}</span>
-                </span>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-      <p class="more"><i>Hay dos más en camino.</i></p>
-    </section>
+      <section id="herramientas" class="tools" aria-labelledby="tools-title">
+        <h2 id="tools-title">Mis herramientas</h2>
+        <ul class="capsules">
+          {tools.map((t) => {
+            const Wrapper = t.ready ? 'a' : 'div';
+            return (
+              <li>
+                <Wrapper class:list={['capsule', { soon: !t.ready }]} href={t.href ?? undefined}>
+                  <span class="capsule-art">
+                    <img src="/placeholder.svg" alt="" width="184" height="184" loading="lazy" />
+                  </span>
+                  {t.ready && <span class="capsule-mark" aria-hidden="true" />}
+                  <span class="capsule-body">
+                    <span class="capsule-tag">
+                      <Tag>{t.ready ? 'Con tu cuenta' : 'En camino'}</Tag>
+                    </span>
+                    <span class="capsule-title">{t.title}</span>
+                    <span class="capsule-desc">{t.desc}</span>
+                  </span>
+                </Wrapper>
+              </li>
+            );
+          })}
+        </ul>
+        <p class="more">Hay dos más en camino.</p>
+      </section>
+
+      <section class="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Preguntas frecuentes</h2>
+        <div class="faq-list">
+          {faqs.map((f) => (
+            <details>
+              <summary>{f.q}</summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <section class="trust" aria-labelledby="trust-title">
+        <h2 id="trust-title" class="sr-only">Por qué puedes fiarte</h2>
+        <ul>
+          {trust.map((t) => (
+            <li>
+              <Icon name={t.icon} size={20} />
+              <span>{t.text}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   </main>
 
 </BaseLayout>
+
+<script>
+  // Notebook alignment: put the first baseline of every `[data-ruled]` block on a rule of its
+  // `.ruled` ancestor. Later lines follow because their line height is a multiple of the gap.
+  import { snapToRule } from '../lib/ui/ruledBaseline';
+
+  const root = document.querySelector<HTMLElement>('.ruled:has([data-ruled])');
+  const blocks = root ? [...root.querySelectorAll<HTMLElement>('[data-ruled]')] : [];
+
+  if (root && blocks.length > 0 && !matchMedia('(forced-colors: active)').matches) {
+    // An empty inline-block sits on the baseline of its line, so its bottom edge is the baseline.
+    const probes = blocks.map((block) => {
+      const first = block.firstChild;
+      // Leading source whitespace would turn into a visible space after the probe.
+      if (first?.nodeType === Node.TEXT_NODE) first.textContent = (first.textContent ?? '').trimStart();
+      const probe = document.createElement('span');
+      probe.setAttribute('aria-hidden', 'true');
+      probe.style.cssText = 'display:inline-block;inline-size:0;block-size:0';
+      block.prepend(probe);
+      return probe;
+    });
+    const ruler = document.createElement('div');
+    ruler.setAttribute('aria-hidden', 'true');
+    ruler.style.cssText = 'position:absolute;visibility:hidden;inline-size:0;block-size:var(--rule-gap)';
+    root.append(ruler);
+
+    const align = () => {
+      for (const block of blocks) block.style.translate = '';
+      const top = root.getBoundingClientRect().top;
+      const gap = ruler.getBoundingClientRect().height;
+      const shifts = probes.map((p) => snapToRule(p.getBoundingClientRect().bottom - top, gap));
+      blocks.forEach((block, i) => (block.style.translate = `0 ${shifts[i]}px`));
+    };
+
+    // Fires once on observe, and again when a resize re-wraps the text.
+    new ResizeObserver(align).observe(root);
+    document.fonts?.ready.then(align);
+  }
+</script>
 
 <style is:global>
   /* Hallmark · macrostructure: Narrative Workflow (hero + 3 stages) · tone: technical, precise and calm, cooled by one steam-like blue accent · anchor hue: blue 236° */
@@ -98,6 +196,10 @@ const tools = [
   /* Hallmark · use: one action in the first screen: paste the profile, see the public library demo, then log in with Steam */
   /* Hallmark · nav: existing SiteHeader (wordmark + user chip + theme toggle, no central nav) · footer: existing SiteFooter · contrast: pass (40-41, token pairs measured >= 5.2:1 in DESIGN.md) */
   /* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V4 */
+  html,
+  body {
+    overflow-x: clip;
+  }
   body {
     margin: 0;
     min-height: 100dvh;
@@ -118,13 +220,27 @@ const tools = [
 </style>
 
 <style>
-  .page {
+  /* Same container as the header bar. */
+  .wrap {
     inline-size: min(var(--container), calc(100% - 2 * var(--space-gutter)));
     margin-inline: auto;
-    padding-block: var(--space-7) var(--space-9);
+  }
+  .stack {
     display: grid;
+    gap: var(--space-8);
+    padding-block: var(--space-6) var(--space-9);
     /* `auto` would grow to the capsules' min-content (flex: none) and widen the whole page on mobile. */
     grid-template-columns: minmax(0, 1fr);
+  }
+  .sr-only {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   h1,
@@ -136,17 +252,32 @@ const tools = [
   }
 
   /* ---------- hero ---------- */
+  /* Full-bleed band: the "ficha" ruling lives behind the hero text only (DESIGN.md, Layout). */
   .hero {
+    /* The hero text is typeset on the ruling: every line height is a multiple of the gap and
+       the script below puts each block's baseline on a rule. The margin line sits just left of
+       the container, where the text starts. */
+    --rule-gap: clamp(1.5rem, 1.2rem + 1vw, 1.75rem);
+    --rule-margin-x: max(
+      var(--space-2),
+      calc((100% - min(var(--container), 100% - 2 * var(--space-gutter))) / 2 - var(--space-3))
+    );
+    padding-block: calc(var(--rule-gap) * 2);
+    border-block-end: 1px solid var(--color-border);
+  }
+  .hero-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-6);
     align-items: end;
   }
-  .pitch {
+  .pitch,
+  .shelf-slot {
     min-inline-size: 0;
   }
   .eyebrow {
-    margin: 0 0 var(--space-3);
+    margin: 0;
+    line-height: var(--rule-gap);
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
     letter-spacing: var(--tracking-eyebrow);
@@ -155,10 +286,10 @@ const tools = [
   }
   h1 {
     margin: 0;
-    /* Sized to keep eyebrow, h1, lede and the lookup input in the first screen at 1280x800. */
-    font-size: clamp(var(--text-3xl), 1.2rem + 3.2vw, 3.75rem);
+    /* Two rules per line, so every wrapped line lands on a rule. */
+    font-size: calc(var(--rule-gap) * 1.9);
     font-weight: var(--weight-display);
-    line-height: var(--leading-tight);
+    line-height: calc(var(--rule-gap) * 2);
     letter-spacing: var(--tracking-display);
     text-wrap: balance;
   }
@@ -167,70 +298,17 @@ const tools = [
   }
   .lede {
     max-inline-size: 48ch;
-    margin: var(--space-4) 0 0;
+    margin: var(--rule-gap) 0 0;
     font-size: var(--text-lg);
-    line-height: var(--leading-body);
+    line-height: var(--rule-gap);
     color: var(--color-text-body);
     text-wrap: pretty;
   }
-  .hero-cta {
-    margin-top: var(--space-5);
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-  }
-  .shelf-slot,
   .lookup-slot {
     min-inline-size: 0;
   }
-  .lookup-slot {
-    grid-column: 1 / -1;
-  }
 
-  /* ---------- buttons ---------- */
-  .cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-block-size: 2.75rem;
-    padding: 0 var(--space-5);
-    border: 1px solid transparent;
-    border-radius: var(--radius-pill);
-    background: var(--color-accent);
-    color: var(--color-on-accent);
-    font-weight: var(--weight-bold);
-    line-height: 1;
-    text-decoration: none;
-    white-space: nowrap;
-    transition:
-      background-color var(--duration-base) var(--ease-out),
-      border-color var(--duration-base) var(--ease-out);
-  }
-  .cta:hover {
-    background: var(--color-accent-hover);
-  }
-  .cta:active {
-    transform: translateY(1px);
-  }
-  .cta.ghost {
-    background: transparent;
-    border-color: var(--color-border-strong);
-    color: var(--color-text);
-  }
-  .cta.ghost:hover {
-    background: var(--color-surface-2);
-  }
-  .cta:focus-visible {
-    outline: 2px solid var(--color-focus);
-    outline-offset: 3px;
-  }
-
-  /* ---------- tools ---------- */
-  .tools {
-    padding-block-start: var(--space-7);
-    border-block-start: 1px solid var(--color-border);
-  }
+  /* ---------- sections ---------- */
   h2 {
     margin: 0;
     font-size: var(--text-2xl);
@@ -238,10 +316,12 @@ const tools = [
     line-height: var(--leading-snug);
     letter-spacing: var(--tracking-display);
   }
-  /* Vertical Steam-library-style capsules (decisiones A18). Padding leaves room for the hover glow. */
+
+  /* ---------- tools ---------- */
+  /* Vertical Steam-library-style capsules (decisiones A18). Padding leaves room for the bookmark. */
   .capsules {
     margin: var(--space-5) 0 0;
-    padding: var(--space-4);
+    padding: var(--space-4) var(--space-3) var(--space-3);
     list-style: none;
     display: flex;
     align-items: stretch;
@@ -256,7 +336,7 @@ const tools = [
     scroll-snap-align: start;
   }
   .more {
-    margin: 0;
+    margin: var(--space-3) 0 0;
     color: var(--color-text-muted);
   }
   .capsule {
@@ -269,29 +349,47 @@ const tools = [
     background: var(--color-surface);
     color: inherit;
     text-decoration: none;
-    overflow: hidden;
+    /* Not clipped: the bookmark glow must overflow the capsule; the art clips itself. */
+    position: relative;
     transition:
       transform var(--duration-base) var(--ease-out),
-      box-shadow var(--duration-base) var(--ease-out),
       border-color var(--duration-base) var(--ease-out);
   }
+  /* The placeholder is transparent and neutral: it takes the theme from its container. */
   .capsule-art {
-    display: grid;
-    place-items: center;
-    background: var(--color-accent-soft);
-    color: var(--color-accent-text);
+    position: relative;
+    min-block-size: 0;
+    overflow: hidden;
+    border-start-start-radius: calc(var(--radius-lg) - 1px);
+    border-start-end-radius: calc(var(--radius-lg) - 1px);
+    background: var(--color-surface-2);
+  }
+  .capsule-art img {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+  /* Same ribbon as Bookmark.svelte, drawn here: its `css="injected"` styles are dropped by the
+     Astro SSR renderer, which only keeps the component body. */
+  .capsule-mark {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: var(--space-4);
+    inline-size: 0.875rem;
+    block-size: 1.375rem;
+    background: var(--color-accent-mark);
+    filter: drop-shadow(var(--glow-bookmark));
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
   }
   .capsule-body {
     display: grid;
+    justify-items: start;
     gap: var(--space-1);
     padding: var(--space-3) var(--space-4) var(--space-4);
   }
   .capsule-tag {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
-    letter-spacing: var(--tracking-eyebrow);
-    text-transform: uppercase;
-    color: var(--color-accent-text);
+    margin-block-end: var(--space-1);
   }
   .capsule-title {
     font-size: var(--text-lg);
@@ -304,24 +402,99 @@ const tools = [
     color: var(--color-text-muted);
     text-wrap: pretty;
   }
-  /* Dim only the art: the label and description are information and keep their contrast. */
-  .capsule.soon .capsule-art {
-    filter: saturate(0.15);
+  /* Dim only the art: the tag and description are information and keep their contrast. */
+  .capsule.soon .capsule-art img {
     opacity: 0.6;
-  }
-  .capsule.soon .capsule-tag {
-    color: var(--color-text-muted);
   }
   a.capsule:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
 
+  /* ---------- faq ---------- */
+  .faq-list {
+    margin-block-start: var(--space-4);
+    max-inline-size: var(--measure);
+  }
+  details {
+    border-block-start: 1px solid var(--color-border);
+  }
+  details:last-child {
+    border-block-end: 1px solid var(--color-border);
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-block-size: 2.75rem;
+    padding-block: var(--space-3);
+    color: var(--color-text);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  /* Chevron drawn with borders, so it follows `currentColor` and needs no icon. */
+  summary::after {
+    content: '';
+    flex: none;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    border-inline-end: 2px solid var(--color-text-muted);
+    border-block-end: 2px solid var(--color-text-muted);
+    rotate: 45deg;
+    transition: rotate var(--duration-base) var(--ease-out);
+  }
+  details[open] summary::after {
+    rotate: -135deg;
+  }
+  summary:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  details p {
+    margin: 0 0 var(--space-4);
+    max-inline-size: var(--measure);
+    text-wrap: pretty;
+  }
+
+  /* ---------- trust ---------- */
+  .trust ul {
+    margin: 0;
+    padding: var(--space-5) 0 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    border-block-start: 1px solid var(--color-border);
+  }
+  .trust li {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--color-text-body);
+  }
+  .trust li :global(svg) {
+    flex: none;
+    color: var(--color-text-muted);
+  }
+
   /* ---------- breakpoints ---------- */
   @media (min-width: 900px) {
-    .hero {
+    .hero-grid {
       grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-      gap: var(--space-6) var(--space-7);
+      gap: var(--space-7);
+    }
+  }
+  @media (min-width: 720px) {
+    .trust ul {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
     }
   }
   @media (min-width: 600px) {
@@ -332,27 +505,18 @@ const tools = [
   }
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     a.capsule:hover {
-      transform: perspective(40rem) rotateX(2deg) rotateY(-4deg) translateY(-0.25rem);
-      border-color: var(--color-accent);
-      box-shadow: var(--glow-accent);
+      transform: translateY(-0.25rem);
+      border-color: var(--color-accent-mark);
     }
   }
   @media (hover: hover) and (prefers-reduced-motion: reduce) {
     a.capsule:hover {
-      border-color: var(--color-accent);
-      box-shadow: var(--glow-accent);
-    }
-  }
-  @media (max-width: 480px) {
-    .hero-cta .cta {
-      flex: 1 1 100%;
+      border-color: var(--color-accent-mark);
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .cta:active {
-      transform: none;
-    }
-    .capsule {
+    .capsule,
+    summary::after {
       transition: none;
     }
   }

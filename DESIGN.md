@@ -1,4 +1,4 @@
-<!-- Hallmark · design.md · studied: yes · DNA-source: image (two boards: dark + light) · genre: modern-minimal · locked · amended 2026-10-22 (brand v2: shelf motif, data-first) -->
+<!-- Hallmark · design.md · studied: yes · DNA-source: image (two boards: dark + light) · genre: modern-minimal · locked · amended 2026-10-22 (brand v2: shelf motif, data-first) and 2026-10-23 (genre inks, interactive shelf) -->
 <!-- pre-emit critique: P4 H4 E4 S4 R5 V4 -->
 
 # mysteamlib · design system
@@ -33,8 +33,11 @@ Locked design system. Every page, component and island follows it. Read it befor
 ## Data display
 
 - **Spine states** (shelf and legend, counts in the legend): *empty* = outline in `--color-spine-empty`; *started* = `--pattern-started` hatch; *played* (landing only, 2 states) = solid `--color-spine-played`; *done* = solid `--color-spine-done`. Height = hours. Blue never encodes state; it is reserved for the bookmarked spine (`--color-accent-mark`, `--glow-bookmark`).
+- **Genre ink** (amended 2026-10-23, owner's request): when the service gives genres, a spine takes the ink of its most specific coloured genre (`gameInk` in `lib/ui/genres.ts`): the border for *empty*, border and fill for *started* and *played*. *Done* keeps `--color-spine-done`. Genres without their own ink and games without data keep the neutral state colours. The ink is a second signal, never the only one: every ink is named in the genre legend and in the tooltip, and state still reads as outline vs fill. The hues skip 211–261° (blue stays the bookmark's).
+- **Interactive shelf**: hovering, touching (drag) or focusing a spine opens one tooltip card (cover, name, hours, last two weeks, state, genres with their dot). Keyboard: one tab stop, arrows, Home/End, Esc; each spine is a button with a full `aria-label`. The visually hidden table is dropped (see Charts). With 60 spines each column is about 5 px wide at 320 px, below the 44 px rule and the 24 px WCAG 2.5.8 floor: an open exception, compensated by the full-height hit area, the drag across the shelf, the arrow keys and the library list below. To revisit if the owner wants a single slider-style control on touch.
+- **User title**: chip "( Civil )" next to the name in the library card, from the most played genre with a nickname (`GENRE_TITLES`); tooltip with the percentage. Text only, no icon, and omitted when fewer than half of the hours have genre data.
 - **Stat figure**: figure in `--text-stat` (`--text-stat-sm` inside cards) + label below in muted. A card never shows an empty ring or "Sin dato" as a genre: when there is no data, the group is omitted (level and "socio desde" are omitted on private profiles).
-- **Charts**: direct labels, no sparklines, no decoration. Hours per genre = horizontal bars with the value at the end of each bar. Every chart is a `<figure>` with a summary `<figcaption>` ("312 juegos: 18 sin jugar…") and a visually hidden equivalent table.
+- **Charts**: direct labels, no sparklines, no decoration. Hours per genre = horizontal bars with the value at the end of each bar. Every chart is a `<figure>` with a summary `<figcaption>` ("312 juegos: 18 sin jugar…") and a visually hidden equivalent table. Exception (2026-10-23): the shelf has no table; each spine is a button whose `aria-label` carries name, hours, state and genres.
 - **Tables / lists**: "Jugado hace poco" is a table on desktop and a two-line list on mobile. One hairline under the header; rows are separated by spacing, not a border per row.
 - Unknown data is `null` and renders "Sin dato" (rule 7). Sample figures from mockups never reach the UI.
 
@@ -55,7 +58,7 @@ Names only; values in `src/styles/tokens.css`.
 
 | Group              | Tokens                                                                                                                       |
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| Palette (raw)      | `--ink-16…82` (10), `--paper-82…99` (5), `--steam-45…82` (6), `--moss-45/78`, `--amber-50/82`, `--coral-48/72`: 27 values, six families, **only in `tokens.css`** |
+| Palette (raw)      | `--ink-16…82` (10), `--paper-82…99` (5), `--steam-45…82` (6), `--moss-45/78`, `--amber-50/82`, `--coral-48/72`: 27 values, six families, plus the genre family `--genre-<name>-47/74` (7 hues × 2 steps, added 2026-10-23), **only in `tokens.css`** |
 | Surfaces           | `--color-bg`, `--color-surface`, `--color-surface-2`, `--color-border`, `--color-border-strong`                              |
 | Text               | `--color-text` (headlines), `--color-text-body`, `--color-text-muted`                                                        |
 | Accent             | `--color-accent`, `--color-accent-hover`, `--color-on-accent`, `--color-accent-text`, `--color-accent-soft`, `--color-focus` |
@@ -63,7 +66,7 @@ Names only; values in `src/styles/tokens.css`.
 | Type               | `--font-sans`, `--font-display`, `--text-xs…--text-display`, `--leading-*`, `--tracking-*`, `--weight-*`                     |
 | Space / shape      | `--space-1…9`, `--space-gutter`, `--measure`, `--container`, `--header-h`, `--radius-sm/md/lg/pill`                          |
 | Elevation / motion | `--shadow-card`, `--shadow-pop`, `--glow-accent`, `--glow-bookmark`, `--ease-out`, `--ease-in-out`, `--duration-fast/base/slow` |
-| Graphics           | `--color-accent-mark` (non-text blue), `--color-spine-empty/played/done`, `--pattern-started`                                |
+| Graphics           | `--color-accent-mark` (non-text blue), `--color-spine-empty/played/done`, `--color-genre-*` (7), `--pattern-started`         |
 | Stat / ficha       | `--text-stat`, `--text-stat-sm`, `--tracking-stat`, `--color-rule`, `--rule-gap`                                             |
 
 Legacy variable → token (for the Phase 11/12 migration; the old names stay until a layout is migrated):
@@ -91,7 +94,7 @@ Motion-cut by default: CSS transitions and Svelte transitions only, `--duration-
 
 Anti-patterns for this project:
 
-- **Closed brand palette.** The web is built only from the six palette families in `tokens.css` (ink, paper, steam, moss, amber, coral). Components use the semantic tokens (`--color-*`), never `--ink-*`/`--steam-*` directly and never a literal colour. Allowed exceptions: gradients and alpha overlays built from palette steps (`color-mix(in oklch, var(--…) N%, transparent)`), the pure-black pop shadow in dark, and the system keywords of the `forced-colors` block. A new colour means a new palette step (with its contrast measured), not an inline value.
+- **Closed brand palette.** The web is built only from the palette families in `tokens.css` (ink, paper, steam, moss, amber, coral, plus the genre family for spines and the genre legend only). Components use the semantic tokens (`--color-*`), never `--ink-*`/`--steam-*` directly and never a literal colour. Allowed exceptions: gradients and alpha overlays built from palette steps (`color-mix(in oklch, var(--…) N%, transparent)`), the pure-black pop shadow in dark, and the system keywords of the `forced-colors` block. A new colour means a new palette step (with its contrast measured), not an inline value.
 - No inline colours, no `font-family` outside the tokens, no hex/rgb in components.
 - No generated illustrations, stock or banners; no decorative spines, left-edge bars or sparklines; no icon beside a section title or tag; no glow except the bookmark; no second filled CTA in a view; no state conveyed by colour alone.
 - Inputs always have a visible label (placeholder is not a label); live results and errors in `aria-live`; touch targets ≥ 44 px on mobile.

@@ -17,9 +17,30 @@ interface Props {
    * false (default, legacy pages) = pinned to dark until the page is migrated (Phases 11/12).
    */
   themed?: boolean;
+  /** Absolute or root-relative URL of the 1200x630 Open Graph image. No og:image without it. */
+  ogImage?: string;
+  /** Private or transient pages: kept out of the index and without canonical. */
+  noindex?: boolean;
+  /** Structured data, serialised into a JSON-LD script. */
+  jsonLd?: Record<string, unknown>;
 }
 
-const { title = 'mysteamlib', description, containedFooter = true, themed = false } = Astro.props;
+const {
+  title = 'mysteamlib',
+  description,
+  containedFooter = true,
+  themed = false,
+  ogImage,
+  noindex = false,
+  jsonLd,
+} = Astro.props;
+
+// Query strings never reach the canonical, so tracking params do not split the page.
+// A trailing slash is dropped (except the root) so `/privacidad/` and `/privacidad` share one canonical.
+const canonical = new URL(Astro.url.pathname.replace(/(.)\/$/, '$1'), Astro.site).href;
+const ogImageUrl = ogImage ? new URL(ogImage, Astro.site).href : undefined;
+// `<` is escaped so a string value can never close the script element.
+const jsonLdText = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
 ---
 
 <!doctype html>
@@ -47,7 +68,27 @@ const { title = 'mysteamlib', description, containedFooter = true, themed = fals
     <link rel="preconnect" href="https://media.steampowered.com" crossorigin />
     <link rel="preconnect" href="https://avatars.steamstatic.com" crossorigin />
     <link rel="preconnect" href="https://community.fastly.steamstatic.com" crossorigin />
+    <link rel="manifest" href="/manifest.webmanifest" />
     {description && <meta name="description" content={description} />}
+    {noindex ? (
+      <meta name="robots" content="noindex, nofollow" />
+    ) : (
+      <>
+        <link rel="canonical" href={canonical} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="mysteamlib" />
+        <meta property="og:locale" content="es_ES" />
+        <meta property="og:title" content={title} />
+        <meta property="og:url" content={canonical} />
+        {description && <meta property="og:description" content={description} />}
+        {ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
+        <meta name="twitter:card" content={ogImageUrl ? 'summary_large_image' : 'summary'} />
+        <meta name="twitter:title" content={title} />
+        {description && <meta name="twitter:description" content={description} />}
+        {ogImageUrl && <meta name="twitter:image" content={ogImageUrl} />}
+      </>
+    )}
+    {jsonLdText && <script type="application/ld+json" set:html={jsonLdText} />}
     <title>{title}</title>
   </head>
   <body>
@@ -85,12 +126,14 @@ const { title = 'mysteamlib', description, containedFooter = true, themed = fals
 
   /* "Ficha" ruling: hero and footer backgrounds only, never behind dense text (DESIGN.md, Layout). */
   .ruled {
+    /* Margin line position: a page can set `--rule-margin-x` to follow its own layout. */
+    --rule-x: var(--rule-margin-x, calc(var(--space-gutter) * 2));
     background-image:
       linear-gradient(
         to right,
-        transparent calc(var(--space-gutter) * 2),
-        color-mix(in oklch, var(--color-accent-mark) 35%, transparent) calc(var(--space-gutter) * 2) calc(var(--space-gutter) * 2 + 1px),
-        transparent calc(var(--space-gutter) * 2 + 1px)
+        transparent var(--rule-x),
+        color-mix(in oklch, var(--color-accent-mark) 35%, transparent) var(--rule-x) calc(var(--rule-x) + 1px),
+        transparent calc(var(--rule-x) + 1px)
       ),
       repeating-linear-gradient(
         to bottom,
